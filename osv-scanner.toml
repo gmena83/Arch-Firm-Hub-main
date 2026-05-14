@@ -1,0 +1,7 @@
+[[IgnoredVulns]]
+id = "GHSA-4r6h-8v6p-xvw6"
+reason = "False positive against xlsx 0.20.3. Advisory affects xlsx < 0.19.3 (Prototype Pollution); we are pinned to the SheetJS CDN tarball xlsx-0.20.3 in artifacts/konti-dashboard/package.json. Suppress until upstream advisory metadata is corrected or xlsx is upgraded again."
+
+[[IgnoredVulns]]
+id = "GHSA-5pgg-2g8v-p4x9"
+reason = "False positive against xlsx 0.20.3. Advisory affects xlsx < 0.20.2 (ReDoS); we are pinned to the SheetJS CDN tarball xlsx-0.20.3 in artifacts/konti-dashboard/package.json. Suppress until upstream advisory metadata is corrected or xlsx is upgraded again."

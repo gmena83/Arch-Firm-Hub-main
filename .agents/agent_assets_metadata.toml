@@ -1,0 +1,50 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "z0DTqw84umm7FBjoAZBXu"
+uri = "file://attached_assets/reports/feedback-vs-changelog.pdf"
+type = "pdf"
+title = "Feedback vs Changelog — KONTi Dashboard (PDF)"
+
+[[outputs]]
+id = "gZ9H-3JFqeiegPror4GX4"
+uri = "file://attached_assets/reports/feedback-vs-changelog.md"
+type = "text"
+title = "Feedback vs Changelog — KONTi Dashboard (Markdown)"
+
+[[outputs]]
+id = "7wuaL-mRMjDZSf0omliPw"
+uri = "file://attached_assets/reports/critical-feedback-priorities.xlsx"
+type = "table"
+title = "Critical Feedback — Prioritized Action Plan (xlsx)"
+
+[[outputs]]
+id = "E6KBfj4K2_utZQzi_CD0i"
+uri = "file://attached_assets/reports/critical-feedback-priorities.csv"
+type = "table"
+title = "Priorities (CSV mirror)"
+
+[[outputs]]
+id = "LI560B0ylZBSLC6u43vJN"
+uri = "file://attached_assets/KONTi_Dashboard_Feedback_Consolidated_v3_addressed.xlsx"
+type = "table"
+title = "KONTi feedback list — reconciled (v3)"
+
+[[outputs]]
+id = "WnACH9NnMikfrg4piMDn0"
+uri = "file://reports/feedback-status-reconciled.md"
+type = "text"
+title = "Feedback status reconciliation report"
+
+[[outputs]]
+id = "gSy_WaVAGX8gVqRRNPLZF"
+uri = "file://attached_assets/reports/KONTi_Feedback_Status_2026-04-30.md"
+type = "text"
+title = "KONTi Feedback Status — 2026-04-30 (Fixed & Pending)"
+
+[[outputs]]
+id = "eEqJzssjfdclrDC10MuQA"
+uri = "file://reports/feedback-status-2026-05-01.md"
+type = "text"
+title = "KONTi Feedback Status — May 1, 2026 (categorized + prioritized)"

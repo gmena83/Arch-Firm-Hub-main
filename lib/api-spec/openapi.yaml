@@ -1,0 +1,5193 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: KONTi Design | Build Studio - Project Management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: projects
+    description: Project management
+  - name: documents
+    description: Document management
+  - name: materials
+    description: Materials library
+  - name: calculator
+    description: Building cost calculator
+  - name: weather
+    description: Weather and site conditions
+  - name: ai
+    description: AI assistant
+  - name: dashboard
+    description: Dashboard summaries
+  - name: leads
+    description: Lead intake & discovery
+  - name: contractors
+    description: Contractor / vendor directory
+  - name: audit
+    description: Cross-project audit log (admin / superadmin only)
+  - name: permits
+    description: Phase 4 — Permit authorization & OGPE submission
+  - name: construction
+    description: Phase 5 — Construction cost-plus, inspections, milestones
+  - name: engineers
+    description: Structural engineer directory
+  - name: pre-design
+    description: Phase 2 — Pre-Design & Viability (checklist, structured variables, GAMMA, phase advance)
+  - name: punchlist
+    description: Phase punchlist — per-phase open items that gate phase advancement
+  - name: admin-secrets
+    description: Superadmin-only managed secrets, integration restart, and audit log
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project (team/admin/superadmin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreateRequest"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{projectId}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a single project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{projectId}/tasks:
+    get:
+      operationId: getProjectTasks
+      tags: [projects]
+      summary: Get tasks for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectTask"
+
+  /projects/{projectId}/weather:
+    get:
+      operationId: getProjectWeather
+      tags: [weather]
+      summary: Get weather status for a project site
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current weather and build suitability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherStatus"
+
+  /projects/{projectId}/documents:
+    get:
+      operationId: getProjectDocuments
+      tags: [documents]
+      summary: Get documents for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: clientVisible
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createProjectDocument
+      tags: [documents]
+      summary: Register a document metadata row for a project (team/admin/superadmin or owning client)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentCreateRequest"
+      responses:
+        "201":
+          description: Document metadata recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (team role or owning client only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{projectId}/documents/{documentId}:
+    patch:
+      operationId: updateProjectDocument
+      tags: [documents]
+      summary: Update document metadata (team/admin/superadmin) — toggles client visibility
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentUpdateRequest"
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (team-only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project or document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProjectDocument
+      tags: [documents]
+      summary: Delete a document (team/admin/superadmin or the owning client who uploaded it)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Document deleted
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (team-only or original-uploader client)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project or document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{projectId}/documents/{documentId}/versions:
+    post:
+      operationId: appendProjectDocumentVersion
+      tags: [documents]
+      summary: Append a new version to an existing document (team-only)
+      description: |
+        Records a new entry in the document's `versions[]` history, rolls the
+        primary `fileSize` and `uploadedAt` metadata forward to the new
+        version, and emits a `document_version_added` activity. Auto-increments
+        the version number from the existing history. The document's primary
+        `uploadedBy` field is intentionally PRESERVED as the immutable
+        original-uploader handle so the A-09 client caption / DELETE dual gate
+        keeps working after team version uploads — the latest version's
+        uploader is captured on the corresponding `versions[]` entry instead.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentVersionCreateRequest"
+      responses:
+        "201":
+          description: Updated document with the appended version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (team-only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project or document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{projectId}/calculations:
+    get:
+      operationId: getProjectCalculations
+      tags: [calculator]
+      summary: Get material calculations for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Calculator entries and total
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorSummary"
+
+  /projects/{projectId}/calculations/{lineId}:
+    patch:
+      operationId: updateProjectCalculationLine
+      tags: [calculator]
+      summary: Inline-edit a calculator line (quantity, base price, manual override)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: lineId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculatorLineUpdate"
+      responses:
+        "200":
+          description: Updated calculator line with recomputed effective price and line total
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entry]
+                properties:
+                  entry:
+                    $ref: "#/components/schemas/CalculatorEntry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project or line not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/variance-report:
+    get:
+      operationId: getProjectVarianceReport
+      tags: [calculator]
+      summary: Estimated vs Invoiced vs Actual rollup for the calculator's variance tab
+      description: |
+        Rolls up the project's contractor estimate (or calculator entries),
+        billed invoices, and cost-plus actuals into the canonical 5-bucket
+        layout used by the variance panel on `/calculator?tab=variance`.
+
+        Each bucket and each material category exposes three cost columns
+        (estimated, invoiced, actual) and two deltas: `varianceVsInvoiced`
+        (`actual - invoiced`, the headline signal) and `variance`
+        (`actual - estimated`, kept for back-compat).
+
+        Invoices that don't fit Materials/Labor/Subcontractor (design-phase,
+        closeout, overhead) surface in a dedicated `unassigned` bucket so
+        nothing is silently dropped. The headline `totals.varianceVsInvoiced`
+        compares matched scopes only — it uses `totals.invoicedInPlan` as
+        the base and excludes `totals.invoicedUnassigned` from the delta.
+
+        Percent fields are nullable: when the base is zero and the value is
+        non-zero, the API returns `null` so the UI can render "—" instead
+        of a misleading "0%".
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Variance rollup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VarianceReport"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/pre-design:
+    get:
+      operationId: getProjectPreDesign
+      tags: [pre-design]
+      summary: Get Phase-2 Pre-Design & Viability state for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Pre-design data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreDesignData"
+        "403":
+          description: Client cannot access this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/checklist-toggle:
+    post:
+      operationId: toggleChecklistItem
+      tags: [pre-design]
+      summary: Update the status of a Pre-Design checklist item
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId, status]
+              properties:
+                itemId: { type: string }
+                status:
+                  type: string
+                  enum: [pending, in_progress, done]
+      responses:
+        "200":
+          description: Updated checklist item
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, item]
+                properties:
+                  projectId: { type: string }
+                  item: { $ref: "#/components/schemas/PreDesignChecklistItem" }
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project, checklist, or item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/structured-variables:
+    post:
+      operationId: submitStructuredVariables
+      tags: [pre-design]
+      summary: Submit structured variables and compute the assisted budget range
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [squareMeters, zoningCode, projectType]
+              properties:
+                squareMeters:
+                  type: number
+                  minimum: 1
+                  maximum: 100000
+                zoningCode:
+                  type: string
+                  description: Format like R-3, C-2, etc.
+                projectType:
+                  type: string
+                  enum: [residencial, comercial, mixto, contenedor]
+      responses:
+        "200":
+          description: Saved structured variables and computed budget
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, structuredVariables, assistedBudgetRange]
+                properties:
+                  projectId: { type: string }
+                  structuredVariables: { $ref: "#/components/schemas/StructuredVariables" }
+                  assistedBudgetRange: { $ref: "#/components/schemas/AssistedBudgetRange" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/advance-phase:
+    post:
+      operationId: advanceProjectPhase
+      tags: [pre-design]
+      summary: Advance the project to the next canonical phase (client may only approve the consultation gate)
+      description: |
+        Refuses to advance when the current phase has any open punchlist items
+        (status not in `done`/`waived`). In that case the response is a structured
+        `PunchlistOpenError` with `error="punchlist_open"`, the open count, and
+        the open items themselves so the client can render a targeted message.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Updated project and the new phase identifier
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [project, advancedTo]
+                properties:
+                  project: { $ref: "#/components/schemas/Project" }
+                  advancedTo: { type: string }
+        "400":
+          description: |
+            Cannot advance. Either a generic validation error (e.g. already in
+            final phase, client gate violation) or a structured `punchlist_open`
+            payload describing the items blocking advancement.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PunchlistOpenError"
+                  - $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Client cannot advance this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/punchlist:
+    get:
+      operationId: listProjectPunchlist
+      tags: [punchlist]
+      summary: List punchlist items for a project phase
+      description: |
+        Returns the items recorded against the given phase (defaults to the
+        project's current phase) along with rolled-up counts used by the UI to
+        render progress.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: phase
+          in: query
+          required: false
+          description: Phase to read items for. Defaults to the project's current phase.
+          schema: { type: string }
+      responses:
+        "200":
+          description: Punchlist items and rolled-up counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PunchlistResponse" }
+        "403":
+          description: Client cannot view this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    post:
+      operationId: createProjectPunchlistItem
+      tags: [punchlist]
+      summary: Add a punchlist item to a project phase (team/admin/superadmin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePunchlistItemRequest" }
+      responses:
+        "201":
+          description: Newly created item, with the project id it was attached to
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PunchlistItemMutationResponse" }
+        "400":
+          description: Validation error (missing/blank label, labelEs, or owner)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Caller cannot modify this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/punchlist/{itemId}:
+    patch:
+      operationId: updateProjectPunchlistItem
+      tags: [punchlist]
+      summary: Edit the label, owner or due date of a punchlist item (team/admin/superadmin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePunchlistItemRequest" }
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PunchlistItemMutationResponse" }
+        "403":
+          description: Caller cannot modify this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project or item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deleteProjectPunchlistItem
+      tags: [punchlist]
+      summary: Remove a punchlist item from the project (team/admin/superadmin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, removedId]
+                properties:
+                  projectId: { type: string }
+                  removedId: { type: string }
+        "403":
+          description: Caller cannot modify this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project or item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/punchlist/{itemId}/status:
+    post:
+      operationId: setProjectPunchlistItemStatus
+      tags: [punchlist]
+      summary: Change a punchlist item's status (team/admin/superadmin)
+      description: |
+        Transitions an item to `open`, `in_progress`, `done`, or `waived`.
+        Waiving requires a `waiverReason` of at least 3 characters; it is
+        recorded on the item and shown in the UI.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePunchlistStatusRequest" }
+      responses:
+        "200":
+          description: Updated item with its new status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PunchlistItemMutationResponse" }
+        "400":
+          description: Invalid status, or waiving without a justification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Caller cannot modify this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project or item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/decline-phase:
+    post:
+      operationId: declineProjectPhase
+      tags: [pre-design]
+      summary: Client declines to advance from the consultation gate (records reason and notifies team)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Optional free-text reason (truncated to 200 chars server-side)
+      responses:
+        "200":
+          description: Project (unchanged phase) and the timestamp the decline was recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [project, declinedAt]
+                properties:
+                  project: { $ref: "#/components/schemas/Project" }
+                  declinedAt: { type: string }
+        "400":
+          description: Decline only available at the consultation gate
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Client cannot decline this project
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/gamma-report:
+    post:
+      operationId: generateGammaReport
+      tags: [pre-design]
+      summary: Generate (mock) a GAMMA presentation for the project and persist its URL
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Generated GAMMA report metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GammaReportResponse"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/design:
+    get:
+      operationId: getProjectDesign
+      tags: [design]
+      summary: Get Phase-3 design state for a project (sub-phases, deliverables)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Design state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignStateResponse"
+
+  /projects/{projectId}/design/deliverable:
+    post:
+      operationId: updateDesignDeliverable
+      tags: [design]
+      summary: Update status of a single design deliverable
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subPhase, deliverableId, status]
+              properties:
+                subPhase:
+                  type: string
+                  enum: [schematic_design, design_development, construction_documents]
+                deliverableId: { type: string }
+                status:
+                  type: string
+                  enum: [pending, in_progress, done]
+      responses:
+        "200": { description: Updated deliverable }
+
+  /projects/{projectId}/design/advance-sub-phase:
+    post:
+      operationId: advanceDesignSubPhase
+      tags: [design]
+      summary: Advance project to the next design sub-phase (or to permits if CD complete)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: New design state and synced project phase
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  state: { $ref: "#/components/schemas/DesignState" }
+                  project: { $ref: "#/components/schemas/Project" }
+
+  /projects/{projectId}/proposals:
+    get:
+      operationId: getProjectProposals
+      tags: [proposals]
+      summary: List comparison-view proposals for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Proposals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  proposals:
+                    type: array
+                    items: { $ref: "#/components/schemas/Proposal" }
+
+  /projects/{projectId}/proposals/{proposalId}/approve:
+    post:
+      operationId: approveProposal
+      tags: [proposals]
+      summary: Client approves a proposal — auto-advances project to Permits
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: proposalId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Approved proposal and updated project
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  proposals:
+                    type: array
+                    items: { $ref: "#/components/schemas/Proposal" }
+                  approved: { $ref: "#/components/schemas/Proposal" }
+                  project: { $ref: "#/components/schemas/Project" }
+
+  /projects/{projectId}/change-orders:
+    get:
+      operationId: getProjectChangeOrders
+      tags: [change-orders]
+      summary: List change orders + totals
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Change-order list and totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeOrderResponse"
+    post:
+      operationId: createChangeOrder
+      tags: [change-orders]
+      summary: Create a new change order (team / admin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, amountDelta, scheduleImpactDays]
+              properties:
+                title: { type: string }
+                titleEs: { type: string }
+                description: { type: string }
+                descriptionEs: { type: string }
+                amountDelta: { type: number }
+                scheduleImpactDays: { type: number }
+                reason: { type: string }
+                reasonEs: { type: string }
+                outsideOfScope:
+                  type: boolean
+                  description: Flag indicating the work falls outside the signed proposal scope.
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  changeOrder: { $ref: "#/components/schemas/ChangeOrder" }
+
+  /projects/{projectId}/change-orders/{coId}:
+    patch:
+      operationId: updateChangeOrder
+      tags: [change-orders]
+      summary: Edit a pending change order's fields (team / admin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: coId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                titleEs: { type: string }
+                description: { type: string }
+                descriptionEs: { type: string }
+                amountDelta: { type: number }
+                scheduleImpactDays: { type: number }
+                reason: { type: string }
+                reasonEs: { type: string }
+                outsideOfScope: { type: boolean }
+      responses:
+        "200":
+          description: Updated change order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  changeOrder: { $ref: "#/components/schemas/ChangeOrder" }
+        "400": { description: Cannot edit a decided CO or no changes provided }
+        "404": { description: CO not found }
+    delete:
+      operationId: deleteChangeOrder
+      tags: [change-orders]
+      summary: Delete a pending change order (team / admin)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: coId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Deleted }
+
+  /projects/{projectId}/change-orders/{coId}/status:
+    post:
+      operationId: setChangeOrderStatus
+      tags: [change-orders]
+      summary: Architect / admin sets the change-order status (team-only)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: coId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                note: { type: string }
+      responses:
+        "200":
+          description: Updated change order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  changeOrder: { $ref: "#/components/schemas/ChangeOrder" }
+
+  /structural-engineers:
+    get:
+      operationId: listStructuralEngineers
+      tags: [engineers]
+      summary: List structural engineers (directory)
+      responses:
+        "200":
+          description: List of engineers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StructuralEngineer" }
+
+  /projects/{id}/cost-plus:
+    get:
+      operationId: getProjectCostPlus
+      tags: [construction]
+      summary: Get the Cost-Plus budget breakdown for a project (team or owning client)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cost-plus budget
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CostPlusBudget" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Insufficient permissions (team role or owning client only)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404": { description: Not found }
+
+  /projects/{id}/invoices:
+    get:
+      operationId: getProjectInvoices
+      tags: [construction]
+      summary: List invoices for a project (team or owning client)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectInvoicesResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Insufficient permissions (team role or owning client only)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404": { description: Not found }
+
+  /projects/{id}/contractor-monitoring:
+    get:
+      operationId: getProjectContractorMonitoring
+      tags: [construction]
+      summary: Contractor-monitoring narrative rows (team or owning client)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Monitoring rows
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContractorMonitoringResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Insufficient permissions (team role or owning client only)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404": { description: Not found }
+
+  /projects/{id}/audit-log:
+    get:
+      operationId: getProjectAuditLog
+      tags: [construction]
+      summary: Recent project activity entries (team always; owning client allowed)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: clientOnly
+          required: false
+          schema: { type: boolean }
+          description: When true, restricts the feed to client-driven activity types.
+      responses:
+        "200":
+          description: Audit log entries (most-recent first, max 100)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectAuditLogResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Insufficient permissions (team role or owning client only)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404": { description: Not found }
+
+  /projects/{projectId}/client-contact:
+    patch:
+      operationId: updateProjectClientContact
+      tags: [projects]
+      summary: Update the project-level client contact info (team only).
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectClientContactUpdate" }
+      responses:
+        "200":
+          description: Updated client contact snapshot.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectClientContact" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Team-only operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/metadata:
+    patch:
+      operationId: updateProjectMetadata
+      tags: [projects]
+      summary: Update project-level metadata (square meters, bathrooms, kitchens, project type, contingency %) consumed by the Contractor Calculator (B-05).
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectMetadataUpdate" }
+      responses:
+        "200":
+          description: Updated project-metadata snapshot.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectMetadata" }
+        "400":
+          description: Invalid metadata payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Team-only operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{projectId}/status-note:
+    patch:
+      operationId: updateProjectStatusNote
+      tags: [projects]
+      summary: Update the plain-language "what's happening now" status sentence (team only).
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectStatusNoteUpdate" }
+      responses:
+        "200":
+          description: Updated status-note snapshot.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectStatusNote" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Team-only operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the authenticated user (refreshed from server-side state)
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update the authenticated user's editable contact fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserUpdateRequest" }
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{id}/inspections:
+    get:
+      operationId: getProjectInspections
+      tags: [construction]
+      summary: List inspections for a project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Inspections
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InspectionsResponse" }
+    post:
+      operationId: createInspection
+      tags: [construction]
+      summary: Schedule a new inspection (admin/architect)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, title, titleEs, inspector, scheduledDate]
+              properties:
+                type:
+                  type: string
+                  enum: [foundation, framing, electrical, plumbing, final]
+                title: { type: string }
+                titleEs: { type: string }
+                inspector: { type: string }
+                scheduledDate: { type: string }
+                completedDate: { type: string }
+                status:
+                  type: string
+                  enum: [scheduled, passed, failed, re_inspect]
+                notes: { type: string }
+                notesEs: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  inspection: { $ref: "#/components/schemas/Inspection" }
+
+  /projects/{id}/inspections/{insId}:
+    get:
+      operationId: getInspection
+      tags: [construction]
+      summary: Get a single inspection with its report metadata
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: insId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Inspection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  inspection: { $ref: "#/components/schemas/Inspection" }
+    patch:
+      operationId: updateInspection
+      tags: [construction]
+      summary: Update an inspection (admin/architect)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: insId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                titleEs: { type: string }
+                inspector: { type: string }
+                scheduledDate: { type: string }
+                completedDate: { type: string }
+                status:
+                  type: string
+                  enum: [scheduled, passed, failed, re_inspect]
+                notes: { type: string }
+                notesEs: { type: string }
+                reportDocumentUrl: { type: string }
+                reportDocumentName: { type: string }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  inspection: { $ref: "#/components/schemas/Inspection" }
+    delete:
+      operationId: deleteInspection
+      tags: [construction]
+      summary: Remove an inspection created in error (admin/architect)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: insId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  deleted: { type: string }
+        "404": { description: Inspection not found }
+
+  /projects/{id}/inspections/{insId}/send-report:
+    post:
+      operationId: sendInspectionReport
+      tags: [construction]
+      summary: Send the inspection report to a structural engineer (admin/architect)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: insId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [engineerId]
+              properties:
+                engineerId: { type: string }
+                note: { type: string }
+      responses:
+        "200":
+          description: Report sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  inspection: { $ref: "#/components/schemas/Inspection" }
+
+  /projects/{id}/milestones:
+    get:
+      operationId: getProjectMilestones
+      tags: [construction]
+      summary: Get the construction milestones timeline for a project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Milestones
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MilestonesResponse" }
+
+  /projects/{id}/milestones/{milestoneId}:
+    patch:
+      operationId: updateMilestone
+      tags: [construction]
+      summary: Update a milestone status / dates (admin/architect)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: milestoneId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [completed, in_progress, upcoming]
+                startDate: { type: string }
+                endDate: { type: string }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  milestone: { $ref: "#/components/schemas/Milestone" }
+
+  /projects/{id}/permits:
+    get:
+      operationId: getProjectPermits
+      tags: [permits]
+      summary: Get Phase-4 permit authorization, signatures, items, and milestones
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Permits state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermitsResponse"
+
+  /projects/{id}/authorize-permits:
+    post:
+      operationId: authorizePermits
+      tags: [permits]
+      summary: Client authorizes the OGPE submission packet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Authorization recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  authorization: { $ref: "#/components/schemas/PermitAuthorization" }
+                required: [projectId, authorization]
+
+  /projects/{id}/sign/{signatureId}:
+    post:
+      operationId: signPermitForm
+      tags: [permits]
+      summary: Client provides a typed-name signature on a required permit form
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: signatureId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [signatureName]
+              properties:
+                signatureName: { type: string }
+      responses:
+        "200":
+          description: Signed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  signature: { $ref: "#/components/schemas/RequiredSignature" }
+                required: [projectId, signature]
+
+  /projects/{id}/request-signature/{signatureId}:
+    post:
+      operationId: requestPermitSignature
+      tags: [permits]
+      summary: Staff sends/re-sends a signature request email to the client (Task #102)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: signatureId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Request recorded; check `emailSent` for delivery outcome.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectId, signatureId, emailSent, deduped]
+                properties:
+                  projectId: { type: string }
+                  signatureId: { type: string }
+                  emailSent: { type: boolean }
+                  deduped: { type: boolean }
+                  reason: { type: string }
+
+  /projects/{id}/permit-items/submit-to-ogpe:
+    post:
+      operationId: submitPermitsToOgpe
+      tags: [permits]
+      summary: Admin/architect submits the permit packet to OGPE (transitions not_submitted → submitted)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  permitItems:
+                    type: array
+                    items: { $ref: "#/components/schemas/PermitItem" }
+                  submittedCount: { type: integer }
+                required: [projectId, permitItems, submittedCount]
+
+  /projects/{id}/permit-items/{itemId}/state:
+    post:
+      operationId: setPermitItemState
+      tags: [permits]
+      summary: Admin/architect transitions a permit item state (with optional revision note)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  enum: [not_submitted, submitted, in_review, revision_requested, approved]
+                revisionNote: { type: string }
+                revisionNoteEs: { type: string }
+      responses:
+        "200":
+          description: Updated permit item; project may auto-advance to construction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  permitItem: { $ref: "#/components/schemas/PermitItem" }
+                  project: { $ref: "#/components/schemas/Project" }
+                  advancedToConstruction: { type: boolean }
+                required: [projectId, permitItem, project, advancedToConstruction]
+
+  /projects/{id}/pdf:
+    post:
+      operationId: exportProjectPdf
+      tags: [projects]
+      summary: Export project report as PDF
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Project not found
+        "501":
+          description: PDF export not configured
+
+  /materials:
+    get:
+      operationId: listMaterials
+      tags: [materials]
+      summary: List materials library
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Material"
+
+  /materials/prices/refresh:
+    post:
+      operationId: refreshMaterialPrices
+      tags: [materials]
+      summary: Refresh material prices using Perplexity AI
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated prices for materials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialPriceRefreshResponse"
+        "501":
+          description: Perplexity not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Perplexity API error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /estimating/materials/import:
+    post:
+      operationId: importMaterialsCsv
+      tags: [estimating]
+      summary: Import a CSV of materials into the library (with optional column mapping)
+      description: |
+        Accepts raw CSV text plus an optional column mapping. When the
+        mapping is supplied, source-CSV headers are renamed to canonical
+        fields (item, category, unit, base_price, ...) before parsing.
+        Returns counts and per-row reasons for any rows that were
+        skipped because they did not pass validation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvImportRequest"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialsImportResponse"
+        "400":
+          description: All rows invalid (or malformed CSV) — body still includes skippedDetails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvImportErrorResponse"
+
+  /estimating/labor-rates/import:
+    post:
+      operationId: importLaborRatesCsv
+      tags: [estimating]
+      summary: Import a CSV of labor rates (with optional column mapping)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvImportRequest"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvImportResponse"
+        "400":
+          description: All rows invalid (or malformed CSV)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvImportErrorResponse"
+
+  /projects/{id}/csv-mappings:
+    get:
+      operationId: getProjectCsvMappings
+      tags: [estimating]
+      summary: Get the remembered CSV column mappings for a project
+      description: |
+        Returns the stored per-import-kind column mappings (materials,
+        labor, receipts) that were last confirmed when importing CSVs
+        on the calculator imports tab. Used to preselect the mapping
+        the next time the same project imports a CSV.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stored mappings (may be empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectCsvMappings"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}/csv-mappings/{kind}:
+    put:
+      operationId: putProjectCsvMapping
+      tags: [estimating]
+      summary: Persist a CSV column mapping for a project + import kind
+      description: |
+        Stores the user-confirmed mapping from canonical schema field to
+        source-CSV header. Values are header strings (or null when the
+        field is intentionally unmapped).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [materials, labor, receipts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutCsvMappingRequest"
+      responses:
+        "200":
+          description: Mapping saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PutCsvMappingResponse"
+        "400":
+          description: Invalid kind or mapping
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List all leads (sorted by score desc)
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Submit a new public lead from the intake form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadCreateRequest"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /leads/{id}/accept:
+    post:
+      operationId: acceptLead
+      tags: [leads]
+      summary: Accept a lead and create a Discovery-phase project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadAcceptResponse"
+        "404":
+          description: Lead not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /contractors:
+    get:
+      operationId: listContractors
+      tags: [contractors]
+      summary: List all contractors (newest first)
+      responses:
+        "200":
+          description: List of contractors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contractor"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    post:
+      operationId: createContractors
+      tags: [contractors]
+      summary: Add one or more contractors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/ContractorCreateRequest"
+                - $ref: "#/components/schemas/ContractorBulkCreateRequest"
+      responses:
+        "201":
+          description: Contractors created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractorBulkCreateResponse"
+        "400":
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /contractors/{id}:
+    delete:
+      operationId: deleteContractor
+      tags: [contractors]
+      summary: Remove a contractor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contractor removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Contractor not found
+
+  /audit:
+    get:
+      operationId: getAuditLog
+      tags: [audit]
+      summary: Cross-project audit log (admin / superadmin only)
+      description: Returns recent audit entries with optional filtering by project, actor (substring match), entity, and date range. Capped at 1000 entries per request.
+      parameters:
+        - in: query
+          name: projectId
+          required: false
+          schema: { type: string }
+          description: Restrict to a single project.
+        - in: query
+          name: actor
+          required: false
+          schema: { type: string }
+          description: Case-insensitive substring match against actor name.
+        - in: query
+          name: entity
+          required: false
+          schema: { type: string }
+          description: Restrict to a single entity bucket (project, document, contractor, permit, calculator, …).
+        - in: query
+          name: from
+          required: false
+          schema: { type: string }
+          description: ISO date or date-time. Lower bound (inclusive).
+        - in: query
+          name: to
+          required: false
+          schema: { type: string }
+          description: ISO date or date-time. Upper bound (inclusive — bare dates cover the whole day).
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 1000 }
+          description: Max entries to return (default 200).
+      responses:
+        "200":
+          description: Audit log page with filter metadata.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditLogResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Admin / superadmin only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /ai/chat:
+    post:
+      operationId: sendChatMessage
+      tags: [ai]
+      summary: Send a message to the AI assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
+  # ---------------------------------------------------------------------------
+  # Task #127 — Asana bidirectional sync
+  # ---------------------------------------------------------------------------
+  /integrations/asana/status:
+    get:
+      operationId: getAsanaStatus
+      tags: [integrations]
+      summary: Current Asana integration status
+      responses:
+        "200":
+          description: Status payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AsanaStatusResponse" }
+
+  /integrations/asana/workspaces:
+    get:
+      operationId: listAsanaWorkspaces
+      tags: [integrations]
+      summary: List Asana workspaces visible to the connected user
+      responses:
+        "200":
+          description: Workspaces list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workspaces:
+                    type: array
+                    items: { $ref: "#/components/schemas/AsanaResource" }
+                required: [workspaces]
+
+  /integrations/asana/boards:
+    get:
+      operationId: listAsanaBoards
+      tags: [integrations]
+      summary: List Asana projects (boards) for a workspace
+      parameters:
+        - in: query
+          name: workspaceGid
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Boards list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  boards:
+                    type: array
+                    items: { $ref: "#/components/schemas/AsanaResource" }
+                required: [boards]
+
+  /integrations/asana/configure:
+    post:
+      operationId: configureAsana
+      tags: [integrations]
+      summary: Persist workspace + board choice and (optional) default assignee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AsanaConfigureRequest" }
+      responses:
+        "200":
+          description: Updated config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AsanaConfigResponse" }
+
+  /integrations/asana/disconnect:
+    post:
+      operationId: disconnectAsana
+      tags: [integrations]
+      summary: Forget configured workspace/board (keeps the OAuth connection itself)
+      responses:
+        "200":
+          description: Disconnected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AsanaConfigResponse" }
+
+  /integrations/asana/sync-log:
+    get:
+      operationId: getAsanaSyncLog
+      tags: [integrations]
+      summary: Recent sync attempts (most recent first, capped at 50)
+      responses:
+        "200":
+          description: Log entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AsanaSyncLogResponse" }
+
+  /integrations/asana/sync-log/{id}/retry:
+    post:
+      operationId: retryAsanaSyncEntry
+      tags: [integrations]
+      summary: Manually retry a failed sync entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Retry queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AsanaRetryResponse" }
+
+  /integrations/drive/status:
+    get:
+      operationId: getDriveStatus
+      tags: [integrations]
+      summary: Current Google Drive integration status (Task #128)
+      responses:
+        "200":
+          description: Drive status payload
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveStatusResponse" }
+
+  /integrations/drive/folders:
+    get:
+      operationId: listDriveFolders
+      tags: [integrations]
+      summary: List Drive folders directly under a parent (defaults to "root")
+      parameters:
+        - in: query
+          name: parentId
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Folders list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveFoldersResponse" }
+
+  /integrations/drive/configure:
+    post:
+      operationId: configureDrive
+      tags: [integrations]
+      summary: Save the chosen root Drive folder and turn the integration on
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DriveConfigureRequest" }
+      responses:
+        "200":
+          description: Updated Drive config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveConfigResponse" }
+
+  /integrations/drive/disconnect:
+    post:
+      operationId: disconnectDrive
+      tags: [integrations]
+      summary: Forget configured root folder (keeps the OAuth connection)
+      responses:
+        "200":
+          description: Disconnected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveConfigResponse" }
+
+  /integrations/drive/sync-log:
+    get:
+      operationId: getDriveSyncLog
+      tags: [integrations]
+      summary: Recent Drive sync attempts (most recent first)
+      responses:
+        "200":
+          description: Drive sync log entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveSyncLogResponse" }
+
+  /integrations/drive/backfill:
+    post:
+      operationId: backfillDriveDocuments
+      tags: [integrations]
+      summary: Upload existing in-memory documents to Drive (idempotent)
+      responses:
+        "200":
+          description: Backfill summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DriveBackfillResponse" }
+
+  /integrations/drive/files/{fileId}/download:
+    get:
+      operationId: downloadDriveFile
+      tags: [integrations]
+      summary: Stream a Drive file's bytes through the API (auth + role gated)
+      parameters:
+        - in: path
+          name: fileId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Raw file bytes (Content-Type matches Drive metadata)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "403": { description: Forbidden (client without visibility / ownership) }
+        "404": { description: Drive file not registered with the dashboard }
+        "412": { description: Drive integration not connected }
+        "502": { description: Drive API error }
+
+  /projects/{projectId}/site-visits:
+    post:
+      operationId: logProjectSiteVisit
+      tags: [projects]
+      summary: Record a team site visit (mirrors to Asana when configured)
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SiteVisitRequest" }
+      responses:
+        "201":
+          description: Activity created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectActivity" }
+
+  /projects/{projectId}/client-interactions:
+    post:
+      operationId: logProjectClientInteraction
+      tags: [projects]
+      summary: Record a client phone/email/in-person interaction
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientInteractionRequest" }
+      responses:
+        "201":
+          description: Activity created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectActivity" }
+
+  /projects/{projectId}/asana-candidates:
+    get:
+      operationId: listProjectAsanaCandidates
+      tags: [projects]
+      summary: Suggest Asana tasks that look like a match for this KONTi project
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Candidate tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items: { $ref: "#/components/schemas/AsanaResource" }
+                required: [candidates]
+
+  /projects/{projectId}/asana-link:
+    post:
+      operationId: linkProjectToAsanaTask
+      tags: [projects]
+      summary: Bind a KONTi project to an Asana task gid
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asanaGid: { type: string }
+              required: [asanaGid]
+      responses:
+        "200":
+          description: Linked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectId: { type: string }
+                  asanaGid: { type: string }
+                required: [projectId, asanaGid]
+
+  # ---------------------------------------------------------------------------
+  # Task #130 — Superadmin Integrations tab (managed secrets + restart + audit)
+  # ---------------------------------------------------------------------------
+  /admin/secrets:
+    get:
+      operationId: listManagedSecrets
+      tags: [admin-secrets]
+      summary: List the configured managed-secret rows (no raw values)
+      responses:
+        "200":
+          description: Managed secret rows with masked previews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secrets:
+                    type: array
+                    items: { $ref: "#/components/schemas/ManagedSecretStatus" }
+                required: [secrets]
+
+  /admin/secrets/{name}:
+    post:
+      operationId: updateManagedSecret
+      tags: [admin-secrets]
+      summary: Set or clear an override for a managed secret
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value: { type: string, description: New secret value (write-only) }
+                clear: { type: boolean, description: When true, removes any override and reverts to env }
+      responses:
+        "200":
+          description: Updated row (no raw value)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { $ref: "#/components/schemas/ManagedSecretStatus" }
+                required: [status]
+
+  /admin/secrets/{name}/test:
+    post:
+      operationId: testManagedSecret
+      tags: [admin-secrets]
+      summary: |
+        Probe the live API with a key value.
+
+        Body is optional:
+          - omit (or pass `{}`) to test the currently stored value
+          - pass `{ "value": "candidate" }` to test a transient pasted
+            candidate WITHOUT persisting it (powers the modal "Test
+            before Save" flow)
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+                  description: Optional candidate value to probe instead of the stored value. Never persisted.
+      responses:
+        "200":
+          description: Test result (ok flag + safe message)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecretTestResult" }
+
+  /admin/integrations/restart/{name}:
+    post:
+      operationId: restartIntegration
+      tags: [admin-secrets]
+      summary: Force-refresh OAuth tokens and run a health probe (drive | asana)
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Restart result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecretTestResult" }
+
+  /admin/audit-log:
+    get:
+      operationId: listSuperadminAudit
+      tags: [admin-secrets]
+      summary: Last 50 superadmin-triggered actions
+      responses:
+        "200":
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/SuperadminAuditEntry" }
+                required: [entries]
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    CsvColumnMapping:
+      type: object
+      description: |
+        Maps each canonical schema field name to either the source-CSV
+        header that should fill it, or null when intentionally unmapped.
+      additionalProperties:
+        type: string
+        nullable: true
+      example:
+        item: Producto
+        category: Categoria
+        unit: Unidad
+        base_price: Costo
+
+    ProjectCsvMappings:
+      type: object
+      properties:
+        projectId:
+          type: string
+        mappings:
+          type: object
+          properties:
+            materials:
+              $ref: "#/components/schemas/CsvColumnMapping"
+            labor:
+              $ref: "#/components/schemas/CsvColumnMapping"
+            receipts:
+              $ref: "#/components/schemas/CsvColumnMapping"
+      required:
+        - projectId
+        - mappings
+
+    PutCsvMappingRequest:
+      type: object
+      properties:
+        mapping:
+          $ref: "#/components/schemas/CsvColumnMapping"
+      required:
+        - mapping
+
+    CsvSkippedRow:
+      type: object
+      properties:
+        row:
+          type: integer
+          description: 1-based source CSV row number (header is row 1).
+        reason:
+          type: string
+          description: Short English reason code (e.g. "missing item/category/unit/price").
+      required:
+        - row
+        - reason
+
+    CsvImportRequest:
+      type: object
+      properties:
+        csv:
+          type: string
+          description: Raw CSV text.
+        mapping:
+          allOf:
+            - $ref: "#/components/schemas/CsvColumnMapping"
+          nullable: true
+          description: Optional canonical-field -> source-header rename map.
+      required:
+        - csv
+
+    CsvImportResponse:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        skippedDetails:
+          type: array
+          items:
+            $ref: "#/components/schemas/CsvSkippedRow"
+      required:
+        - imported
+        - skipped
+
+    MaterialsImportResponse:
+      allOf:
+        - $ref: "#/components/schemas/CsvImportResponse"
+        - type: object
+          properties:
+            addedToProjectCalculator:
+              type: integer
+              description: Number of lines pushed onto the project's calculator (0 unless projectId was supplied in the request).
+
+    CsvImportErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        messageEs:
+          type: string
+        skipped:
+          type: integer
+        skippedDetails:
+          type: array
+          items:
+            $ref: "#/components/schemas/CsvSkippedRow"
+      required:
+        - message
+
+    PutCsvMappingResponse:
+      type: object
+      properties:
+        projectId:
+          type: string
+        kind:
+          type: string
+          enum: [materials, labor, receipts]
+        mapping:
+          $ref: "#/components/schemas/CsvColumnMapping"
+      required:
+        - projectId
+        - kind
+        - mapping
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, superadmin, architect, client]
+        avatar:
+          type: string
+        phone:
+          type: string
+        postalAddress:
+          type: string
+        physicalAddress:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - role
+
+    UserUpdateRequest:
+      type: object
+      description: Editable contact fields for the authenticated user.
+      properties:
+        phone:
+          type: string
+        postalAddress:
+          type: string
+        physicalAddress:
+          type: string
+
+    ProjectClientContactUpdate:
+      type: object
+      description: Patch payload for project-level client contact info.
+      properties:
+        clientPhone: { type: string }
+        clientPostalAddress: { type: string }
+        clientPhysicalAddress: { type: string }
+
+    ProjectClientContact:
+      type: object
+      description: Project-level client contact info snapshot.
+      properties:
+        projectId: { type: string }
+        clientPhone: { type: string }
+        clientPostalAddress: { type: string }
+        clientPhysicalAddress: { type: string }
+      required: [projectId, clientPhone, clientPostalAddress, clientPhysicalAddress]
+
+    ProjectStatusNoteUpdate:
+      type: object
+      description: Patch payload for the plain-language status sentence (English + Spanish).
+      properties:
+        currentStatusNote: { type: string }
+        currentStatusNoteEs: { type: string }
+
+    ProjectStatusNote:
+      type: object
+      description: Snapshot of the plain-language status sentence after update.
+      properties:
+        projectId: { type: string }
+        currentStatusNote: { type: string }
+        currentStatusNoteEs: { type: string }
+      required: [projectId, currentStatusNote, currentStatusNoteEs]
+
+    ProjectMetadataUpdate:
+      type: object
+      description: Patch payload for project-level metadata consumed by the Contractor Calculator (B-05).
+      properties:
+        squareMeters: { type: number }
+        bathrooms: { type: integer }
+        kitchens: { type: integer }
+        projectType:
+          type: string
+          enum: [residencial, comercial, mixto, contenedor]
+        contingencyPercent: { type: number }
+
+    ProjectMetadata:
+      type: object
+      description: Snapshot of project-level metadata after update.
+      properties:
+        projectId: { type: string }
+        squareMeters: { type: number }
+        bathrooms: { type: integer }
+        kitchens: { type: integer }
+        projectType:
+          type: string
+          enum: [residencial, comercial, mixto, contenedor]
+        contingencyPercent: { type: number }
+      required: [projectId, squareMeters, bathrooms, kitchens, projectType, contingencyPercent]
+
+    ProjectInvoice:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        number: { type: string }
+        title: { type: string }
+        titleEs: { type: string }
+        total: { type: number }
+        paid: { type: number }
+        balance: { type: number }
+        status:
+          type: string
+          enum: [draft, sent, partial, paid, overdue]
+        issuedAt: { type: string, description: "ISO date YYYY-MM-DD." }
+        dueAt: { type: string, description: "ISO date YYYY-MM-DD." }
+      required: [id, projectId, number, title, titleEs, total, paid, balance, status, issuedAt, dueAt]
+
+    ProjectInvoicesResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        invoices:
+          type: array
+          items: { $ref: "#/components/schemas/ProjectInvoice" }
+      required: [projectId, invoices]
+
+    ContractorMonitoringRow:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [delays, weather, issues, changes, breaches, rework]
+        labelEn: { type: string }
+        labelEs: { type: string }
+        status:
+          type: string
+          enum: [ok, watch, issue]
+        summaryEn: { type: string }
+        summaryEs: { type: string }
+        updatedAt: { type: string, description: "ISO date YYYY-MM-DD." }
+      required: [id, type, labelEn, labelEs, status, summaryEn, summaryEs, updatedAt]
+
+    ContractorMonitoringResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ContractorMonitoringRow" }
+      required: [projectId, rows]
+
+    ProjectAuditLogResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/ProjectActivity" }
+      required: [projectId, entries]
+
+    ProjectCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        clientName:
+          type: string
+        location:
+          type: string
+        budgetAllocated:
+          type: number
+        description:
+          type: string
+        clientUserId:
+          type: string
+      required:
+        - name
+        - clientName
+        - location
+        - budgetAllocated
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        nameEs:
+          type: string
+        clientName:
+          type: string
+        location:
+          type: string
+        city:
+          type: string
+        phase:
+          type: string
+          enum: [discovery, consultation, pre_design, schematic_design, design_development, construction_documents, permits, construction, completed]
+        phaseLabel:
+          type: string
+        phaseLabelEs:
+          type: string
+        phaseNumber:
+          type: integer
+        progressPercent:
+          type: integer
+        budgetAllocated:
+          type: number
+        budgetUsed:
+          type: number
+        startDate:
+          type: string
+        estimatedEndDate:
+          type: string
+        description:
+          type: string
+        coverImage:
+          type: string
+        liveCoverImage:
+          type: string
+          description: |
+            Task #134. Derived at read time for KONTi roles only (admin/architect/team/superadmin).
+            Resolves to the most recently uploaded `construction_progress` photo's URL for the
+            project, falling back to `coverImage` when none exists. OMITTED for the client role.
+        liveCoverUploadedAt:
+          type: string
+          description: |
+            Task #134. ISO timestamp of the photo behind `liveCoverImage`. Present iff the live
+            image was sourced from a real `construction_progress` document (i.e. NOT the
+            `coverImage` fallback) — the dashboard surfaces this date in the staff alt text so
+            the team can tell at a glance when the jobsite shot was taken. KONTi roles only.
+        clientCoverImage:
+          type: string
+          description: |
+            Task #134. Derived at read time for the client role only. One of five curated KONTi
+            mockup images, chosen by snapping `progressPercent` to the nearest landmark
+            (0 / 25 / 50 / 75 / 100) using midpoints 12.5 / 37.5 / 62.5 / 87.5. OMITTED for
+            non-client roles.
+        clientCoverLandmark:
+          type: integer
+          enum: [0, 25, 50, 75, 100]
+          description: |
+            Task #134. The landmark percent the `clientCoverImage` was snapped to, surfaced so
+            the dashboard can render a tiny "X% milestone" pill. Client role only.
+        asanaGid:
+          type: string
+        gammaReportUrl:
+          type: string
+        teamMembers:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, on_hold, completed]
+        clientPhone:
+          type: string
+          description: Project-level contact phone for the client. Editable by the team.
+        clientPostalAddress:
+          type: string
+          description: Project-level postal address for the client. Editable by the team.
+        clientPhysicalAddress:
+          type: string
+          description: Project-level physical (street) address for the client. Editable by the team.
+        currentStatusNote:
+          type: string
+          description: Plain-language "what's happening now" sentence (English) shown on the client construction card. Editable by the team. When blank the UI falls back to a deterministic phase-based summary.
+        currentStatusNoteEs:
+          type: string
+          description: Plain-language "what's happening now" sentence (Spanish) shown on the client construction card. Editable by the team.
+        squareMeters:
+          type: number
+          description: Project size in square meters. Edited from Project Detail and consumed (read-only) by the Contractor Calculator (B-05).
+        bathrooms:
+          type: integer
+          description: Number of bathrooms. Project-level; consumed read-only by the Contractor Calculator (B-05).
+        kitchens:
+          type: integer
+          description: Number of kitchens. Project-level; consumed read-only by the Contractor Calculator (B-05).
+        projectType:
+          type: string
+          description: Project type bucket (residencial | comercial | mixto | contenedor). Project-level; consumed read-only by the Contractor Calculator (B-05).
+          enum: [residencial, comercial, mixto, contenedor]
+        contingencyPercent:
+          type: number
+          description: Default contingency percentage applied to contractor estimates for this project. Project-level; consumed read-only by the Contractor Calculator (B-05).
+      required:
+        - id
+        - name
+        - clientName
+        - location
+        - city
+        - phase
+        - phaseLabel
+        - phaseLabelEs
+        - phaseNumber
+        - progressPercent
+        - budgetAllocated
+        - budgetUsed
+        - startDate
+        - estimatedEndDate
+        - status
+
+    ProjectTask:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        titleEs:
+          type: string
+        dueDate:
+          type: string
+        completed:
+          type: boolean
+        assignee:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        phase:
+          type: string
+      required:
+        - id
+        - projectId
+        - title
+        - titleEs
+        - completed
+        - priority
+        - phase
+
+    WeatherHistoryEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        dayLabel:
+          type: string
+        dayLabelEs:
+          type: string
+        tempHigh:
+          type: number
+        tempLow:
+          type: number
+        precipMm:
+          type: number
+        condition:
+          type: string
+        conditionEs:
+          type: string
+        emoji:
+          type: string
+      required:
+        - date
+        - dayLabel
+        - dayLabelEs
+        - tempHigh
+        - tempLow
+        - precipMm
+        - condition
+        - conditionEs
+        - emoji
+
+    WeatherStatus:
+      type: object
+      properties:
+        projectId:
+          type: string
+        city:
+          type: string
+        temperature:
+          type: number
+        temperatureUnit:
+          type: string
+        condition:
+          type: string
+        conditionEs:
+          type: string
+        humidity:
+          type: integer
+        windSpeed:
+          type: number
+        windUnit:
+          type: string
+        buildSuitability:
+          type: string
+          enum: [green, yellow, red]
+        buildSuitabilityLabel:
+          type: string
+        buildSuitabilityLabelEs:
+          type: string
+        buildSuitabilityReason:
+          type: string
+        buildSuitabilityReasonEs:
+          type: string
+        lastUpdated:
+          type: string
+        weatherHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherHistoryEntry"
+      required:
+        - projectId
+        - city
+        - temperature
+        - temperatureUnit
+        - condition
+        - conditionEs
+        - humidity
+        - windSpeed
+        - windUnit
+        - buildSuitability
+        - buildSuitabilityLabel
+        - buildSuitabilityLabelEs
+        - buildSuitabilityReason
+        - buildSuitabilityReasonEs
+        - lastUpdated
+
+    DocumentVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+        fileSize:
+          type: string
+        notes:
+          type: string
+        notesEs:
+          type: string
+      required:
+        - version
+        - uploadedBy
+        - uploadedAt
+        - fileSize
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [pdf, excel, pptx, photo, other]
+        category:
+          type: string
+          enum: [client_review, internal, permits, construction, design, contratos, acuerdos_compra, otros]
+        designSubPhase:
+          type: string
+          enum: [schematic_design, design_development, construction_documents]
+          description: Optional Phase-3 sub-phase tag (SD/DD/CD).
+        photoCategory:
+          type: string
+          enum: [site_conditions, construction_progress, punchlist_evidence, final]
+          description: Site-photo bucket. Only meaningful when `type` is "photo"; controls grouping in the project gallery and report.
+        caption:
+          type: string
+          description: Optional caption shown under the photo in the gallery and report.
+        imageUrl:
+          type: string
+          description: Optional URL the gallery uses to render a thumbnail/full-size image. When omitted, the gallery shows a generic photo tile.
+        isClientVisible:
+          type: boolean
+        featuredAsCover:
+          type: boolean
+          description: When true, this photo is the staff-curated "hero" used as the project's `liveCoverImage`. Only applies to `type === "photo"` + `photoCategory === "construction_progress"` documents. At most one document per project may be flagged at a time — toggling one on flips the previously flagged photo off (server-enforced).
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+        fileSize:
+          type: string
+        description:
+          type: string
+        previewable:
+          type: boolean
+        driveFileId:
+          type: string
+          description: Google Drive file ID set when the document was synced to Drive (Task #128). Absent for in-memory-only documents.
+        driveFolderId:
+          type: string
+          description: Google Drive folder the file was placed in (project sub-folder).
+        driveWebViewLink:
+          type: string
+          description: Drive viewer URL — clickable in the dashboard to open the file in Google Drive.
+        driveWebContentLink:
+          type: string
+          description: Direct download URL provided by Drive. Used by the photo lightbox to render the original.
+        driveThumbnailLink:
+          type: string
+          description: Drive-generated thumbnail URL (small preview).
+        driveDownloadProxyUrl:
+          type: string
+          description: Dashboard-mediated download URL (Task #128). Re-checks role + visibility on every request so revoking client visibility instantly cuts off file access.
+        driveWarning:
+          type: object
+          description: Optional non-blocking warning surfaced when a Drive write (delete/visibility) succeeded locally but failed on Drive. The dashboard should display it and direct admins to the Drive sync log.
+          properties:
+            en: { type: string }
+            es: { type: string }
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentVersion"
+      required:
+        - id
+        - projectId
+        - name
+        - type
+        - category
+        - isClientVisible
+        - uploadedBy
+        - uploadedAt
+        - fileSize
+
+    DocumentCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: File name including extension (1-200 chars).
+        category:
+          type: string
+          enum: [client_review, internal, permits, construction, design, contratos, acuerdos_compra, otros]
+          description: Document category. Must match the Document.category enum.
+        type:
+          type: string
+          enum: [pdf, excel, pptx, photo, other]
+          description: Optional file-type bucket. If omitted, the server infers it from the file extension and normalizes to one of [pdf|excel|pptx|photo|other].
+        isClientVisible:
+          type: boolean
+          description: When true the document appears in the client-visible list. Defaults to true.
+        fileSize:
+          type: string
+          description: Human-readable file size (e.g. "1.4 MB"). Optional.
+        description:
+          type: string
+          description: Optional free-form description.
+        mimeType:
+          type: string
+          description: Optional MIME type captured at upload time.
+        photoCategory:
+          type: string
+          enum: [site_conditions, construction_progress, punchlist_evidence, final]
+          description: Required when uploading a photo; chooses which gallery section the image lands in.
+        caption:
+          type: string
+          maxLength: 500
+          description: Optional photo caption (max 500 chars).
+        imageUrl:
+          type: string
+          description: Optional URL for the photo thumbnail/full-size image.
+        fileBase64:
+          type: string
+          description: Optional base64-encoded payload (raw or `data:` URL). When the Drive integration is enabled, the bytes are streamed to the project's Drive sub-folder and the response includes driveFileId/driveWebViewLink. Ignored when Drive is disabled.
+      required:
+        - name
+        - category
+
+    DocumentUpdateRequest:
+      type: object
+      description: Patch the safe, mutable metadata of a document. At least one of `isClientVisible`, `featuredAsCover`, or `caption` must be present.
+      properties:
+        isClientVisible:
+          type: boolean
+          description: Toggle whether the document is visible in the client-facing document list. Team-only.
+        featuredAsCover:
+          type: boolean
+          description: Toggle whether this construction-progress photo is the staff-curated cover. Setting to `true` flips any other photo on the same project off so only one cover is flagged at a time. Only valid for documents with `type === "photo"` and `photoCategory === "construction_progress"`. Team-only.
+        caption:
+          type: string
+          maxLength: 500
+          description: Update the photo caption (max 500 chars). Allowed for team/admin/superadmin OR the original uploader (so clients can edit captions on photos they uploaded themselves).
+
+    DocumentVersionCreateRequest:
+      type: object
+      description: |
+        Append a new version entry to an existing document. Team-only.
+        This endpoint records version METADATA (size, uploader, timestamp,
+        notes) — file content storage in this demo is handled out of band
+        (the Drive integration sync layer in production; static seed
+        images in dev), matching every other document upload path in the
+        dashboard.
+      properties:
+        fileSize:
+          type: string
+          description: Human-readable file size of the new version (e.g. "1.4 MB").
+        notes:
+          type: string
+          maxLength: 500
+          description: Optional English notes about what changed in this version.
+        notesEs:
+          type: string
+          maxLength: 500
+          description: Optional Spanish notes about what changed in this version.
+
+    Material:
+      type: object
+      properties:
+        id:
+          type: string
+        item:
+          type: string
+        itemEs:
+          type: string
+        unit:
+          type: string
+        basePrice:
+          type: number
+        category:
+          type: string
+          enum: [lumber, foundation, finishes, electrical, plumbing, steel, insulation, other]
+      required:
+        - id
+        - item
+        - itemEs
+        - unit
+        - basePrice
+        - category
+
+    Contractor:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        trade: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        notes: { type: string }
+        uploadedAt: { type: string, format: date-time }
+        uploadedBy: { type: string }
+      required: [id, name, trade, email, phone, notes, uploadedAt, uploadedBy]
+
+    ContractorCreateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        trade: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        notes: { type: string }
+      required: [name, trade]
+
+    ContractorBulkCreateRequest:
+      type: object
+      properties:
+        contractors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractorCreateRequest"
+      required: [contractors]
+
+    ContractorBulkCreateResponse:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contractor"
+        skipped:
+          type: array
+          items:
+            type: object
+            properties:
+              index: { type: integer }
+              reason: { type: string }
+            required: [index, reason]
+      required: [created, skipped]
+
+    AuditEntry:
+      type: object
+      description: A single normalized audit entry for the cross-project admin log.
+      properties:
+        id: { type: string }
+        timestamp: { type: string, description: "ISO timestamp the action happened." }
+        actor: { type: string, description: "Display name of the user / system that performed the action." }
+        actorId: { type: string }
+        actorRole: { type: string }
+        entity:
+          type: string
+          description: Bucket the entry belongs to (project, document, contractor, permit, calculator, …).
+        entityId: { type: string }
+        projectId: { type: string }
+        projectName: { type: string, description: "Server-resolved project name for convenience." }
+        type: { type: string, description: "Specific action type (e.g. phase_change, contractor_created)." }
+        description: { type: string }
+        descriptionEs: { type: string }
+      required: [id, timestamp, actor, entity, type, description, descriptionEs]
+
+    AuditLogResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total entries currently retained in the audit log (pre-filter).
+        matching:
+          type: integer
+          description: Number of entries matching the requested filters.
+        returned:
+          type: integer
+          description: Number of entries actually returned (after limit).
+        limit:
+          type: integer
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
+        filters:
+          type: object
+          description: Distinct values present across the entire log (helpful for filter dropdowns).
+          properties:
+            actors:
+              type: array
+              items: { type: string }
+            entities:
+              type: array
+              items: { type: string }
+            projects:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  name: { type: string }
+                required: [id, name]
+          required: [actors, entities, projects]
+      required: [total, matching, returned, limit, entries, filters]
+
+    CalculatorEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        materialId:
+          type: string
+        materialName:
+          type: string
+        materialNameEs:
+          type: string
+        category:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        basePrice:
+          type: number
+        manualPriceOverride:
+          type: number
+        effectivePrice:
+          type: number
+        lineTotal:
+          type: number
+      required:
+        - id
+        - projectId
+        - materialId
+        - materialName
+        - materialNameEs
+        - category
+        - unit
+        - quantity
+        - basePrice
+        - effectivePrice
+        - lineTotal
+
+    CalculatorLineUpdate:
+      type: object
+      description: |
+        Partial update for a calculator line. Any field omitted is left unchanged.
+        manualPriceOverride may be set to null to clear an existing override.
+      properties:
+        quantity:
+          type: number
+          minimum: 0
+        basePrice:
+          type: number
+          minimum: 0
+        manualPriceOverride:
+          type: number
+          nullable: true
+          minimum: 0
+
+    CalculatorSummary:
+      type: object
+      properties:
+        projectId:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalculatorEntry"
+        subtotalByCategory:
+          type: object
+          additionalProperties:
+            type: number
+        grandTotal:
+          type: number
+      required:
+        - projectId
+        - entries
+        - subtotalByCategory
+        - grandTotal
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        activeProjects:
+          type: integer
+        completedProjects:
+          type: integer
+        totalBudget:
+          type: number
+        budgetUsed:
+          type: number
+        totalDocuments:
+          type: integer
+        pendingTasks:
+          type: integer
+        projectsByPhase:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - totalProjects
+        - activeProjects
+        - completedProjects
+        - totalBudget
+        - budgetUsed
+        - totalDocuments
+        - pendingTasks
+        - projectsByPhase
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [document_upload, task_completed, phase_change, weather_alert, comment]
+        projectId:
+          type: string
+        projectName:
+          type: string
+        description:
+          type: string
+        descriptionEs:
+          type: string
+        actor:
+          type: string
+        timestamp:
+          type: string
+      required:
+        - id
+        - type
+        - projectId
+        - projectName
+        - description
+        - descriptionEs
+        - actor
+        - timestamp
+
+    ChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+        mode:
+          type: string
+          enum: [client_assistant, internal_spec_bot]
+        projectId:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+      required:
+        - message
+        - mode
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+      required:
+        - role
+        - content
+
+    ChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        mode:
+          type: string
+        projectId:
+          type: string
+      required:
+        - message
+        - mode
+
+    MaterialPriceItem:
+      type: object
+      properties:
+        id:
+          type: string
+        item:
+          type: string
+        suggestedPrice:
+          type: number
+        source:
+          type: string
+      required:
+        - id
+        - item
+        - suggestedPrice
+        - source
+
+    MaterialPriceRefreshResponse:
+      type: object
+      properties:
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaterialPriceItem"
+        refreshedAt:
+          type: string
+        source:
+          type: string
+        cached:
+          type: boolean
+      required:
+        - prices
+        - refreshedAt
+        - source
+        - cached
+
+    LeadBooking:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [consultation_30min, weekly_seminar]
+        slot:
+          type: string
+        label:
+          type: string
+      required: [type, slot, label]
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+          enum: [website, social, referral, media, events]
+        projectType:
+          type: string
+          enum: [residencial, comercial, mixto, contenedor]
+        location:
+          type: string
+        budgetRange:
+          type: string
+          enum: [under_150k, 150k_300k, 300k_500k, 500k_1m, over_1m]
+        terrainStatus:
+          type: string
+          enum: [no_terrain, with_terrain, with_plans]
+        contactName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+        score:
+          type: integer
+        status:
+          type: string
+          enum: [new, contacted, accepted, rejected]
+        booking:
+          $ref: "#/components/schemas/LeadBooking"
+        asanaGid:
+          type: string
+      required:
+        - id
+        - source
+        - projectType
+        - location
+        - budgetRange
+        - terrainStatus
+        - contactName
+        - email
+        - phone
+        - createdAt
+        - score
+        - status
+
+    LeadCreateRequest:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [website, social, referral, media, events]
+        projectType:
+          type: string
+          enum: [residencial, comercial, mixto, contenedor]
+        location:
+          type: string
+        budgetRange:
+          type: string
+          enum: [under_150k, 150k_300k, 300k_500k, 500k_1m, over_1m]
+        terrainStatus:
+          type: string
+          enum: [no_terrain, with_terrain, with_plans]
+        contactName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+        booking:
+          $ref: "#/components/schemas/LeadBooking"
+      required:
+        - source
+        - projectType
+        - location
+        - budgetRange
+        - terrainStatus
+        - contactName
+        - email
+        - phone
+
+    LeadAcceptResponse:
+      type: object
+      properties:
+        lead:
+          $ref: "#/components/schemas/Lead"
+        project:
+          $ref: "#/components/schemas/Project"
+        asanaGid:
+          type: string
+        asanaMessage:
+          type: string
+        asanaMessageEs:
+          type: string
+      required:
+        - lead
+        - project
+        - asanaGid
+        - asanaMessage
+
+    # ----- Task #127 Asana integration schemas -----
+    AsanaResource:
+      type: object
+      properties:
+        gid: { type: string }
+        name: { type: string }
+      required: [gid, name]
+
+    AsanaIntegrationConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        workspaceGid:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        workspaceName:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        boardGid:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        boardName:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        defaultAssigneeGid:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        dashboardBaseUrl:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        connectedAt:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        connectedBy:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+      required:
+        - enabled
+        - workspaceGid
+        - workspaceName
+        - boardGid
+        - boardName
+        - defaultAssigneeGid
+        - dashboardBaseUrl
+        - connectedAt
+        - connectedBy
+
+    AsanaStatusResponse:
+      type: object
+      properties:
+        connected: { type: boolean }
+        configured: { type: boolean, description: "True when workspaceGid + boardGid are persisted and enabled is true." }
+        connectionMessage: { type: string }
+        connectionMessageEs: { type: string }
+        config: { $ref: "#/components/schemas/AsanaIntegrationConfig" }
+      required: [connected, configured, connectionMessage, connectionMessageEs, config]
+
+    AsanaConfigResponse:
+      type: object
+      properties:
+        config: { $ref: "#/components/schemas/AsanaIntegrationConfig" }
+      required: [config]
+
+    AsanaConfigureRequest:
+      type: object
+      properties:
+        workspaceGid: { type: string }
+        workspaceName: { type: string }
+        boardGid: { type: string }
+        boardName: { type: string }
+        defaultAssigneeGid: { type: string }
+        dashboardBaseUrl: { type: string }
+      required: [workspaceGid, boardGid]
+
+    AsanaSyncLogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        timestamp: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        activityType: { type: string }
+        asanaTaskGid:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        status:
+          type: string
+          enum: [ok, failed, skipped, retried]
+        attempts: { type: integer }
+        message: { type: string }
+        messageEs: { type: string }
+      required:
+        - id
+        - timestamp
+        - projectId
+        - projectName
+        - activityType
+        - asanaTaskGid
+        - status
+        - attempts
+        - message
+        - messageEs
+
+    AsanaSyncLogResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/AsanaSyncLogEntry" }
+        queueLength: { type: integer }
+      required: [entries, queueLength]
+
+    AsanaRetryResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+      required: [ok]
+
+    DriveFolder:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        parents:
+          type: array
+          items: { type: string }
+      required: [id, name]
+
+    DriveProjectFolderMap:
+      type: object
+      properties:
+        projectFolderId: { type: string }
+        subFolders:
+          type: object
+          additionalProperties: { type: string }
+      required: [projectFolderId, subFolders]
+
+    DriveIntegrationConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        rootFolderId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        rootFolderName:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        visibilityPolicy:
+          type: string
+          enum: [private, anyone_with_link]
+        deletePolicy:
+          type: string
+          enum: [trash, hard_delete]
+        connectedAt:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        connectedBy:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        projectFolders:
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/DriveProjectFolderMap" }
+        firstConnectCompletedAt:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+          description: Timestamp of the first successful Drive connect. Used as a run-once marker so disconnect+reconnect skips the per-project folder bootstrap and the initial backfill.
+        lastConfiguredRootFolderId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+          description: Drive folder ID the per-project folder map was built against. Survives disconnect so a reconnect to a different root can detect the root change and invalidate the cached folder map.
+      required:
+        - enabled
+        - rootFolderId
+        - rootFolderName
+        - visibilityPolicy
+        - deletePolicy
+        - connectedAt
+        - connectedBy
+        - projectFolders
+        - firstConnectCompletedAt
+        - lastConfiguredRootFolderId
+
+    DriveStatusResponse:
+      type: object
+      properties:
+        connected: { type: boolean }
+        configured: { type: boolean }
+        connectionMessage: { type: string }
+        connectionMessageEs: { type: string }
+        config: { $ref: "#/components/schemas/DriveIntegrationConfig" }
+      required: [connected, configured, connectionMessage, connectionMessageEs, config]
+
+    DriveFoldersResponse:
+      type: object
+      properties:
+        folders:
+          type: array
+          items: { $ref: "#/components/schemas/DriveFolder" }
+        parentId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+      required: [folders, parentId]
+
+    DriveConfigureRequest:
+      type: object
+      properties:
+        rootFolderId:
+          type: string
+          description: ID of an existing Drive folder. Either rootFolderId OR createName is required.
+        rootFolderName:
+          type: string
+          description: Optional display name for the chosen folder. The server resolves it from Drive when omitted.
+        createName:
+          type: string
+          description: When supplied (and no rootFolderId), the server creates a new folder of this name under My Drive.
+        visibilityPolicy:
+          type: string
+          enum: [private, anyone_with_link]
+        deletePolicy:
+          type: string
+          enum: [trash, hard_delete]
+
+    DriveConfigResponse:
+      type: object
+      properties:
+        config: { $ref: "#/components/schemas/DriveIntegrationConfig" }
+        firstConnectBootstrap:
+          type: object
+          description: Present only on the first successful connect. Reports the result of the per-project sub-folder provisioning + initial backfill that the server runs once.
+          properties:
+            provisioned: { type: integer, description: Number of projects whose canonical sub-folders were ensured. }
+            provisionFailed: { type: integer, description: Number of projects where provisioning failed. }
+            uploaded: { type: integer, description: Documents uploaded to Drive by the initial backfill. }
+            skipped: { type: integer, description: Documents skipped (already in Drive or no source bytes). }
+            failed: { type: integer, description: Documents the backfill could not upload. }
+          required: [provisioned, provisionFailed, uploaded, skipped, failed]
+      required: [config]
+
+    DriveSyncLogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        timestamp: { type: string }
+        action: { type: string }
+        status:
+          type: string
+          enum: [ok, failed, skipped]
+        projectId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        projectName:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        documentId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        documentName:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        driveFileId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        message: { type: string }
+        messageEs: { type: string }
+      required:
+        - id
+        - timestamp
+        - action
+        - status
+        - projectId
+        - projectName
+        - documentId
+        - documentName
+        - driveFileId
+        - message
+        - messageEs
+
+    DriveSyncLogResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/DriveSyncLogEntry" }
+      required: [entries]
+
+    DriveBackfillResult:
+      type: object
+      properties:
+        documentId: { type: string }
+        status:
+          type: string
+          enum: [uploaded, skipped, failed]
+        driveFileId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        message: { type: string }
+      required: [documentId, status, message]
+
+    DriveBackfillSummary:
+      type: object
+      properties:
+        uploaded: { type: integer }
+        skipped: { type: integer }
+        failed: { type: integer }
+        total: { type: integer }
+      required: [uploaded, skipped, failed, total]
+
+    DriveBackfillResponse:
+      type: object
+      properties:
+        summary: { $ref: "#/components/schemas/DriveBackfillSummary" }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/DriveBackfillResult" }
+      required: [summary, results]
+
+    SiteVisitRequest:
+      type: object
+      properties:
+        visitor: { type: string }
+        visitDate: { type: string, description: "ISO-8601 date string." }
+        channel:
+          type: string
+          enum: [site, remote]
+        note: { type: string }
+      required: [visitor, visitDate]
+
+    ClientInteractionRequest:
+      type: object
+      properties:
+        occurredAt: { type: string, description: "ISO-8601 date or datetime string." }
+        channel:
+          type: string
+          enum: [call, meeting, email, whatsapp]
+        with: { type: string, description: "Who the team interacted with." }
+        note: { type: string }
+      required: [occurredAt, channel, with]
+
+    Deliverable:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        labelEs: { type: string }
+        owner: { type: string }
+        status:
+          type: string
+          enum: [pending, in_progress, done]
+        completedAt: { type: string }
+      required: [id, label, labelEs, status]
+
+    DesignSubPhaseState:
+      type: object
+      properties:
+        deliverables:
+          type: array
+          items: { $ref: "#/components/schemas/Deliverable" }
+        startedAt: { type: string }
+        completedAt: { type: string }
+      required: [deliverables]
+
+    DesignState:
+      type: object
+      description: Phase-3 design model. `subPhases` is the deliverables map keyed by sub-phase.
+      properties:
+        currentSubPhase:
+          type: string
+          enum: [schematic_design, design_development, construction_documents, complete]
+        subPhases:
+          type: object
+          properties:
+            schematic_design: { $ref: "#/components/schemas/DesignSubPhaseState" }
+            design_development: { $ref: "#/components/schemas/DesignSubPhaseState" }
+            construction_documents: { $ref: "#/components/schemas/DesignSubPhaseState" }
+      required: [currentSubPhase, subPhases]
+
+    DesignStateResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        available: { type: boolean }
+        isProjectInDesign: { type: boolean }
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/DesignState"
+            - type: "null"
+        subPhaseOrder:
+          type: array
+          items:
+            type: string
+            enum: [schematic_design, design_development, construction_documents]
+        subPhaseLabels:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              en: { type: string }
+              es: { type: string }
+      required: [projectId, available, isProjectInDesign]
+
+    Proposal:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        scenario:
+          type: string
+          enum: [economy, standard, premium]
+        title: { type: string }
+        titleEs: { type: string }
+        summary: { type: string }
+        summaryEs: { type: string }
+        totalCost: { type: number }
+        durationWeeks: { type: number }
+        highlights:
+          type: array
+          items: { type: string }
+        highlightsEs:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        decidedBy: { type: string }
+        decidedAt: { type: string }
+      required: [id, projectId, scenario, title, totalCost, status]
+
+    ChangeOrder:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        number: { type: string }
+        title: { type: string }
+        titleEs: { type: string }
+        description: { type: string }
+        descriptionEs: { type: string }
+        amountDelta: { type: number }
+        scheduleImpactDays: { type: number }
+        reason: { type: string }
+        reasonEs: { type: string }
+        requestedBy: { type: string }
+        requestedAt: { type: string }
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        decidedBy: { type: string }
+        decidedAt: { type: string }
+        decisionNote: { type: string }
+        outsideOfScope:
+          type: boolean
+          description: True if the change adds work beyond the signed proposal scope.
+      required: [id, projectId, number, title, amountDelta, scheduleImpactDays, status]
+
+    ChangeOrderResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        changeOrders:
+          type: array
+          items: { $ref: "#/components/schemas/ChangeOrder" }
+        totals:
+          type: object
+          properties:
+            approvedDelta: { type: number }
+            pendingDelta: { type: number }
+            approvedDays: { type: number }
+          required: [approvedDelta, pendingDelta, approvedDays]
+      required: [projectId, changeOrders, totals]
+
+    PermitAuthorization:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [none, authorized]
+        authorizedBy: { type: string }
+        authorizedAt: { type: string }
+        authorizedIpMock:
+          type: string
+          description: Captured (or mocked) IP address of the authorizing client for audit
+        summaryAccepted: { type: boolean }
+      required: [status, summaryAccepted]
+
+    RequiredSignature:
+      type: object
+      properties:
+        id: { type: string }
+        formName: { type: string }
+        formNameEs: { type: string }
+        required: { type: boolean }
+        signedBy: { type: string }
+        signedAt: { type: string }
+      required: [id, formName, formNameEs, required]
+
+    PermitItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        nameEs: { type: string }
+        agency: { type: string }
+        responsible: { type: string }
+        state:
+          type: string
+          enum: [not_submitted, submitted, in_review, revision_requested, approved]
+        permitType:
+          type: string
+          description: |
+            Top-level permit family used to group items in the Permits page UI.
+            Items with no explicit type fall into "other". Stable order on the
+            client is: structural → electrical → plumbing → mechanical →
+            environmental → use → other.
+          enum: [structural, electrical, plumbing, mechanical, environmental, use, other]
+        lastUpdatedAt: { type: string }
+        revisionNote: { type: string }
+        revisionNoteEs: { type: string }
+        estimatedTime: { type: string }
+        estimatedTimeEs: { type: string }
+        notes: { type: string }
+        notesEs: { type: string }
+      required: [id, name, nameEs, agency, responsible, state, estimatedTime, estimatedTimeEs, notes, notesEs]
+
+    PermitsResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        authorization: { $ref: "#/components/schemas/PermitAuthorization" }
+        requiredSignatures:
+          type: array
+          items: { $ref: "#/components/schemas/RequiredSignature" }
+        permitItems:
+          type: array
+          items: { $ref: "#/components/schemas/PermitItem" }
+        milestones:
+          type: object
+          properties:
+            authorization: { type: boolean }
+            signatures: { type: boolean }
+            submission: { type: boolean }
+            review: { type: boolean }
+            approval: { type: boolean }
+          required: [authorization, signatures, submission, review, approval]
+        canSubmitToOgpe: { type: boolean }
+        stateOrder:
+          type: array
+          items:
+            type: string
+            enum: [not_submitted, submitted, in_review, revision_requested, approved]
+      required: [projectId, authorization, requiredSignatures, permitItems, milestones, canSubmitToOgpe]
+
+    StructuralEngineer:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        firm: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        specialty: { type: string }
+        specialtyEs: { type: string }
+      required: [id, name, firm, email, phone, specialty, specialtyEs]
+
+    NonBillableExpense:
+      type: object
+      properties:
+        id: { type: string }
+        date: { type: string, description: "ISO date YYYY-MM-DD." }
+        category: { type: string }
+        categoryEs: { type: string }
+        description: { type: string }
+        descriptionEs: { type: string }
+        amount: { type: number }
+        paidBy: { type: string }
+      required: [id, date, category, categoryEs, description, descriptionEs, amount, paidBy]
+
+    CostPlusBudget:
+      type: object
+      properties:
+        projectId: { type: string }
+        materialsCost: { type: number }
+        laborCost: { type: number }
+        subcontractorCost: { type: number }
+        subtotal: { type: number }
+        plusFeePercent: { type: number }
+        plusFeeAmount: { type: number }
+        finalTotal: { type: number }
+        notes: { type: string }
+        notesEs: { type: string }
+        nonBillableExpenses:
+          type: array
+          items: { $ref: "#/components/schemas/NonBillableExpense" }
+        nonBillableTotal: { type: number }
+      required: [projectId, materialsCost, laborCost, subcontractorCost, subtotal, plusFeePercent, plusFeeAmount, finalTotal]
+
+    Inspection:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        type:
+          type: string
+          enum: [foundation, framing, electrical, plumbing, final]
+        title: { type: string }
+        titleEs: { type: string }
+        inspector: { type: string }
+        scheduledDate: { type: string }
+        completedDate: { type: string }
+        status:
+          type: string
+          enum: [scheduled, passed, failed, re_inspect]
+        notes: { type: string }
+        notesEs: { type: string }
+        reportSentTo: { type: string }
+        reportSentToName: { type: string }
+        reportSentAt: { type: string }
+        reportSentNote: { type: string }
+        reportDocumentUrl: { type: string }
+        reportDocumentName: { type: string }
+      required: [id, projectId, type, title, titleEs, inspector, scheduledDate, status]
+
+    InspectionsResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        inspections:
+          type: array
+          items: { $ref: "#/components/schemas/Inspection" }
+      required: [projectId, inspections]
+
+    Milestone:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        key:
+          type: string
+          enum: [foundation, framing, roofing, mep, finishes, final]
+        title: { type: string }
+        titleEs: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        status:
+          type: string
+          enum: [completed, in_progress, upcoming]
+      required: [id, projectId, key, title, titleEs, startDate, endDate, status]
+
+    MilestonesResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        milestones:
+          type: array
+          items: { $ref: "#/components/schemas/Milestone" }
+      required: [projectId, milestones]
+
+    PreDesignChecklistItem:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        labelEs: { type: string }
+        status:
+          type: string
+          enum: [pending, in_progress, done]
+        assignee: { type: string }
+        completedAt: { type: string }
+      required: [id, label, labelEs, status, assignee]
+
+    StructuredVariables:
+      type: object
+      properties:
+        squareMeters: { type: number }
+        zoningCode: { type: string }
+        projectType:
+          type: string
+          enum: [residencial, comercial, mixto, contenedor]
+        submittedAt: { type: string }
+        submittedBy: { type: string }
+      required: [squareMeters, zoningCode, projectType, submittedAt, submittedBy]
+
+    AssistedBudgetRange:
+      type: object
+      properties:
+        low: { type: number }
+        mid: { type: number }
+        high: { type: number }
+        currency: { type: string }
+        perSqMeterMid: { type: number }
+      required: [low, mid, high, currency, perSqMeterMid]
+
+    WeeklyReport:
+      type: object
+      properties:
+        id: { type: string }
+        weekStart: { type: string }
+        weekEnd: { type: string }
+        title: { type: string }
+        titleEs: { type: string }
+        url: { type: string }
+      required: [id, weekStart, weekEnd, title, titleEs, url]
+
+    ProjectActivity:
+      type: object
+      properties:
+        id: { type: string }
+        timestamp: { type: string }
+        type: { type: string }
+        actor: { type: string }
+        description: { type: string }
+        descriptionEs: { type: string }
+      required: [id, timestamp, type, actor, description, descriptionEs]
+
+    PreDesignData:
+      type: object
+      properties:
+        projectId: { type: string }
+        checklist:
+          type: array
+          items: { $ref: "#/components/schemas/PreDesignChecklistItem" }
+        structuredVariables:
+          oneOf:
+            - $ref: "#/components/schemas/StructuredVariables"
+            - type: "null"
+        assistedBudgetRange:
+          oneOf:
+            - $ref: "#/components/schemas/AssistedBudgetRange"
+            - type: "null"
+        weeklyReports:
+          type: array
+          items: { $ref: "#/components/schemas/WeeklyReport" }
+        activities:
+          type: array
+          items: { $ref: "#/components/schemas/ProjectActivity" }
+      required: [projectId, checklist, structuredVariables, assistedBudgetRange, weeklyReports, activities]
+
+    GammaReportResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        reportId: { type: string }
+        gammaReportUrl: { type: string }
+        url: { type: string }
+        generatedAt: { type: string }
+        generatedBy: { type: string }
+        pages: { type: integer }
+      required: [projectId, reportId, gammaReportUrl, url, generatedAt, generatedBy, pages]
+
+    PunchlistItemStatus:
+      type: string
+      description: |
+        Lifecycle states for a punchlist item. `done` and `waived` count as
+        cleared for the purpose of advancing the project phase.
+      enum: [open, in_progress, done, waived]
+
+    PunchlistItem:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        phase:
+          type: string
+          description: Project phase the item belongs to (e.g. construction, completed)
+        label: { type: string }
+        labelEs: { type: string }
+        owner: { type: string }
+        dueDate:
+          type: string
+          description: ISO date (YYYY-MM-DD); omitted if no due date is set
+        status: { $ref: "#/components/schemas/PunchlistItemStatus" }
+        waiverReason:
+          type: string
+          description: Justification recorded when the item was waived
+        completedAt:
+          type: string
+          description: ISO timestamp the item was marked done
+        updatedAt: { type: string }
+        category:
+          type: string
+          description: Optional grouping category (English) used to render sticky section headers in the punchlist panel.
+        categoryEs:
+          type: string
+          description: Optional Spanish translation of `category`.
+        photoUrl:
+          type: string
+          description: Optional thumbnail URL (data URL, seed-image path, or http(s)) shown alongside the item. Rendered as a clickable thumbnail that opens the full image in a new tab; items without a `photoUrl` show a neutral placeholder so the layout stays uniform.
+        photoDocumentId:
+          type: string
+          description: Optional id of a project document whose stored URL should be resolved client-side and shown as the thumbnail. Reserved for the document-backed punchlist evidence path; when present and `photoUrl` is unset, the dashboard resolves the URL via the project's documents list.
+      required: [id, projectId, phase, label, labelEs, owner, status, updatedAt]
+
+    PunchlistResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        phase: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PunchlistItem" }
+        openCount: { type: integer }
+        totalCount: { type: integer }
+        doneCount: { type: integer }
+        waivedCount: { type: integer }
+      required: [projectId, phase, items, openCount, totalCount, doneCount, waivedCount]
+
+    PunchlistItemMutationResponse:
+      type: object
+      properties:
+        projectId: { type: string }
+        item: { $ref: "#/components/schemas/PunchlistItem" }
+      required: [projectId, item]
+
+    CreatePunchlistItemRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          description: English label (truncated to 200 chars server-side)
+        labelEs:
+          type: string
+          description: Spanish label (truncated to 200 chars server-side)
+        owner:
+          type: string
+          description: Person or subcontractor responsible (truncated to 100 chars)
+        dueDate:
+          type: string
+          description: Optional ISO date (YYYY-MM-DD)
+        phase:
+          type: string
+          description: Phase to attach the item to. Defaults to the project's current phase.
+      required: [label, labelEs, owner]
+
+    UpdatePunchlistItemRequest:
+      type: object
+      description: Partial update; only provided fields are written.
+      properties:
+        label: { type: string }
+        labelEs: { type: string }
+        owner: { type: string }
+        dueDate:
+          type: string
+          description: ISO date (YYYY-MM-DD); pass empty string to clear
+
+    UpdatePunchlistStatusRequest:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/PunchlistItemStatus" }
+        waiverReason:
+          type: string
+          description: Required (≥3 chars) when status is `waived`. Ignored otherwise.
+      required: [status]
+
+    PunchlistOpenError:
+      type: object
+      description: |
+        Returned by `POST /projects/{projectId}/advance-phase` with HTTP 400
+        when the current phase still has unresolved punchlist items.
+      properties:
+        error:
+          type: string
+          enum: [punchlist_open]
+        message:
+          type: string
+          description: Human-readable reason in English
+        messageEs:
+          type: string
+          description: Human-readable reason in Spanish
+        openCount: { type: integer }
+        openItems:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              label: { type: string }
+              labelEs: { type: string }
+              status: { $ref: "#/components/schemas/PunchlistItemStatus" }
+            required: [id, label, labelEs, status]
+      required: [error, message, messageEs, openCount, openItems]
+
+    ManagedSecretCategory:
+      type: string
+      enum: [ai, pdf, presentation, oauth]
+
+    ManagedSecretMeta:
+      type: object
+      properties:
+        name: { type: string }
+        label: { type: string }
+        labelEs: { type: string }
+        description: { type: string }
+        descriptionEs: { type: string }
+        category: { $ref: "#/components/schemas/ManagedSecretCategory" }
+        testable: { type: boolean }
+        formatHint: { type: string, nullable: true }
+      required: [name, label, labelEs, description, descriptionEs, category, testable]
+
+    ManagedSecretSource:
+      type: string
+      enum: [override, env, missing]
+
+    ManagedSecretStatus:
+      type: object
+      properties:
+        meta: { $ref: "#/components/schemas/ManagedSecretMeta" }
+        source: { $ref: "#/components/schemas/ManagedSecretSource" }
+        preview: { type: string, description: "Last-4 masked preview, e.g. …1234" }
+        overrideUpdatedAt: { type: string, nullable: true }
+        overrideUpdatedBy: { type: string, nullable: true }
+      required: [meta, source, preview, overrideUpdatedAt, overrideUpdatedBy]
+
+    SecretTestResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        message: { type: string }
+        messageEs: { type: string, nullable: true }
+      required: [ok, message]
+
+    SuperadminAuditAction:
+      type: string
+      enum:
+        - secret.update
+        - secret.test
+        - secret.test_failed
+        - secret.test_candidate
+        - secret.test_candidate_failed
+        - integration.restart
+        - integration.restart_failed
+
+    SuperadminAuditEntry:
+      type: object
+      properties:
+        id: { type: string }
+        timestamp: { type: string }
+        actorUserId: { type: string }
+        actorEmail: { type: string }
+        action: { $ref: "#/components/schemas/SuperadminAuditAction" }
+        target: { type: string }
+        message: { type: string }
+        messageEs: { type: string }
+      required: [id, timestamp, actorUserId, actorEmail, action, target, message, messageEs]
+
+    ContractorEstimateLine:
+      type: object
+      description: |
+        Single line on a contractor estimate. Materials and subcontractor
+        lines always price as `quantity × unitPrice`. Labor lines carry an
+        optional `laborType` discriminator (Task #158 / B-02): `hourly`
+        lines also price as `quantity × unitPrice`; `lump` lines are fixed
+        price — the server normalises them to `quantity = 1` and
+        `unit = "lump"` on PUT so the variance report's amount-delta math
+        treats `lineTotal` as the lump sum.
+      properties:
+        id: { type: string }
+        category:
+          type: string
+          description: Bucket the line rolls up into. Typically `materials`, `labor`, or `subcontractor`.
+        description: { type: string }
+        descriptionEs: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        unitPrice: { type: number }
+        lineTotal: { type: number }
+        laborType:
+          type: string
+          enum: [hourly, lump]
+          description: Only meaningful when `category === "labor"`. `lump` lines are normalised to `quantity=1`, `unit="lump"`.
+      required: [id, category, description, descriptionEs, quantity, unit, unitPrice, lineTotal]
+
+    VarianceBucketStatus:
+      type: string
+      enum: [on_track, warning, over]
+      description: |
+        Traffic-light state for a variance bucket. `on_track` = within ±5%
+        of estimate, `warning` = ±5–15%, `over` = > +15%.
+
+    VarianceBucket:
+      type: object
+      description: |
+        Per-bucket rollup for the variance panel. The four buckets are
+        Materials, Labor, Subcontractor, and Unassigned (invoices that
+        were billed but don't fit M/L/S — design-phase, closeout, etc).
+      properties:
+        key:
+          type: string
+          description: Canonical bucket key (`materials`, `labor`, `subcontractor`, `unassigned`).
+        labelEn: { type: string }
+        labelEs: { type: string }
+        estimated:
+          type: number
+          description: Estimated cost from the contractor estimate or calculator entries.
+        invoiced:
+          type: number
+          description: Total billed to the client for this bucket.
+        actual:
+          type: number
+          description: Cost-plus actual spend recorded against this bucket.
+        variance:
+          type: number
+          description: actual − estimated. Positive = over budget.
+        variancePercent:
+          type: number
+          nullable: true
+          description: |
+            (actual − estimated) ÷ estimated × 100, rounded to int. Returns
+            `null` when estimated=0 and actual≠0 so the UI can render "—"
+            instead of a misleading "0%".
+        varianceVsInvoiced:
+          type: number
+          description: actual − invoiced. The headline signal — "did we spend more than we billed?"
+        varianceVsInvoicedPercent:
+          type: number
+          nullable: true
+          description: Same null-on-zero-base contract as `variancePercent`.
+        status: { $ref: "#/components/schemas/VarianceBucketStatus" }
+      required:
+        - key
+        - labelEn
+        - labelEs
+        - estimated
+        - invoiced
+        - actual
+        - variance
+        - variancePercent
+        - varianceVsInvoiced
+        - varianceVsInvoicedPercent
+        - status
+
+    VarianceMaterialCategory:
+      type: object
+      description: Per-material-category rollup inside the Materials bucket.
+      properties:
+        category: { type: string }
+        estimated: { type: number }
+        invoiced: { type: number }
+        actual: { type: number }
+        variance: { type: number }
+        variancePercent:
+          type: number
+          nullable: true
+        varianceVsInvoiced: { type: number }
+        varianceVsInvoicedPercent:
+          type: number
+          nullable: true
+      required:
+        - category
+        - estimated
+        - invoiced
+        - actual
+        - variance
+        - variancePercent
+        - varianceVsInvoiced
+        - varianceVsInvoicedPercent
+
+    VarianceTotals:
+      type: object
+      description: |
+        Whole-project totals used by the totals strip on the variance panel.
+        `invoiced` is the everything-billed number (in-plan + unassigned);
+        `invoicedInPlan` is the matched-scope base used by
+        `varianceVsInvoiced` so the headline delta compares apples-to-apples.
+      properties:
+        estimated: { type: number }
+        actual: { type: number }
+        invoiced:
+          type: number
+          description: All invoices billed to the client (in-plan + unassigned).
+        invoicedInPlan:
+          type: number
+          description: M/L/S invoices only — the matched-scope base for `varianceVsInvoiced`.
+        invoicedUnassigned:
+          type: number
+          description: Invoices that didn't fit M/L/S (design, closeout, overhead).
+        variance: { type: number }
+        variancePercent:
+          type: number
+          nullable: true
+        varianceVsInvoiced:
+          type: number
+          description: actual − invoicedInPlan. Excludes unassigned so scopes match.
+        varianceVsInvoicedPercent:
+          type: number
+          nullable: true
+      required:
+        - estimated
+        - actual
+        - invoiced
+        - invoicedInPlan
+        - invoicedUnassigned
+        - variance
+        - variancePercent
+        - varianceVsInvoiced
+        - varianceVsInvoicedPercent
+
+    VarianceReport:
+      type: object
+      description: |
+        Estimated vs Invoiced vs Actual rollup for the calculator's variance
+        tab. Returned by `GET /api/projects/:projectId/variance-report`.
+      properties:
+        projectId: { type: string }
+        projectName: { type: string }
+        estimateSource:
+          type: string
+          enum: [contractor_estimate, calculator_entries]
+          description: Which input drove the Estimated column.
+        generatedAt:
+          type: string
+          format: date-time
+        buckets:
+          type: array
+          items: { $ref: "#/components/schemas/VarianceBucket" }
+        materialCategories:
+          type: array
+          items: { $ref: "#/components/schemas/VarianceMaterialCategory" }
+        totals: { $ref: "#/components/schemas/VarianceTotals" }
+      required:
+        - projectId
+        - projectName
+        - estimateSource
+        - generatedAt
+        - buckets
+        - materialCategories
+        - totals

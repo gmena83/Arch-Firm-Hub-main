@@ -1,0 +1,6 @@
+
+
+# Playwright run artifacts (failed-test trace/error context). Regenerated on
+# every test run; not source.
+test-results/
+playwright-report/

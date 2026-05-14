@@ -1,0 +1,69 @@
+Core Directive
+Build a professional-grade, multi-user project management and client dashboard for an architecture firm (5+ employees). The design must adhere to the uploaded [Branding Book] and the user flow defined in the [UX Map]. Priority is high-fidelity data organization and a minimalist "Architectural" aesthetic.
+
+Technical Stack & Foundation
+Framework: Next.js (App Router), Tailwind CSS, Shadcn/UI.
+
+Database: Supabase (Auth, PostgreSQL, Vector for AI RAG, and Storage).
+
+External APIs: * Weather: OpenWeatherMap API (track site conditions).
+
+Project Management: Asana (Mock API for MVP).
+
+Reporting: Gamma.io (iFrame embedding).
+
+Intelligence: OpenAI API (GPT-4o + Embeddings).
+3. Database Schema (Refined)
+Projects: Add location_coordinates or city for Weather API, and asana_gid.
+
+Documents: Column is_client_visible (Boolean) to gate access for RAG and UI.
+
+Materials_Library: id, item, unit, base_price, category.
+
+Project_Calculations: id, project_id, material_id, quantity, manual_price_override.
+
+Weather_Logs: project_id, date, condition, build_suitability_flag.
+
+Key Modules to Build
+A. The Weather Tracker
+Implement a "Site Status" widget on each project page.
+
+Fetch real-time data for the project location.
+
+Logic: Display a "Build Status" (e.g., Green: Good for Concrete, Red: High Wind/Rain - Do not send contractors).
+
+B. The Building Calculator (Advanced)
+Create a table-style interface to add materials to a project.
+
+Logic: If manual_price_override is provided, use it for totals; otherwise, default to the base_price from the hardware store library.
+
+Include categories (Lumber, Foundation, Finishes) and a "Project Total" summary.
+
+C. Dual-Agent AI (RAG System)
+Client Assistant: Only retrieves from documents where is_client_visible = true. Answers progress and high-level technical questions.
+
+Internal Spec Bot: Full RAG access to all project spreadsheets, PDFs, and spec sheets. Answers: "What was the floor load capacity defined in the reference Excel?" or "Summarize the permit requirements from the last upload."
+
+D. Document Management
+Two-Way Upload: Secure zones for both Client and Team.
+
+Support for PDF, Excel, PPTX, and high-res construction photos.
+
+Generate automatic email notifications (via Resend) when a new file is uploaded to the "Client Review" folder.
+
+UI/UX Specifications
+Visual Style: Follow the Branding Book strictly (Typography, HEX codes).
+Dashboard: 3 active project cards. Each card shows: Status, Current Weather at site, and link to the Gamma.io report.
+
+Mobile View: Ensure the "Site Update" (Photo upload) is optimized for mobile so architects can use it on the construction site.
+
+Initial Seed Data
+Reference the [Uploaded Reference Files] to populate the Materials Library and mock the 3 initial projects with realistic data.
+KEY INSTRUCTIONS BEFORE PROCEEDING
+
+They 2 key elements shared on the attached files for context are:
+a) The first screenshot, that was shared and created by the client must be the blueprint for the UI of the site. That style and "vibe" must be replicated all over the app.
+b) The csv file Proyecto_Konti" is a Miro Table where we mapped all the contact points and expected operations for the app. That is the blueprint of the app.
+Create 3 "synthetic" projects so I can present this MVP to the client and they understand how each sectrion work, what they will see, reports, etc. THE MVP WILL NOT HAVE A "LIVE BACKEND", so please create the information of each project considering that one is on the initial phase, 2nd is "in development" and the 3rd one is finished.
+Create screenshots, images, reports and all the documents and screens that we should be seeing with the fully funcitonal app for each of the requested 3 projects.
+Before proceeding, please ask ALL THE CLARIFICATION QUESTIONS YOU HAVE TO GATHER AS MUCH INPUT, INSIGHTS AND CONTEXT.

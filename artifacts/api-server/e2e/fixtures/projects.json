@@ -1,0 +1,63 @@
+{
+  "_meta": "Three project profiles driven by the e2e suite. Each is created via POST /leads then POST /leads/:id/accept, then walked through the lifecycle to its target advancement. A and B include intake bookings to exercise both BookingType paths.",
+  "projects": [
+    {
+      "key": "A",
+      "displayName": "Casa Serenidad",
+      "target": "completed",
+      "lead": {
+        "source": "website",
+        "projectType": "contenedor",
+        "location": "Rincón, Puerto Rico",
+        "budgetRange": "150k_300k",
+        "terrainStatus": "with_terrain",
+        "contactName": "Casa Serenidad — Familia Acevedo",
+        "email": "casa.serenidad+e2e@example.com",
+        "phone": "+1-787-555-0101",
+        "notes": "2-container ADU, owns land, target Completed (e2e fixture). Booked 1:1 consultation slot.",
+        "booking": {
+          "type": "consultation_30min",
+          "slot": "2026-05-04T15:00:00.000Z",
+          "label": "30-min discovery call — Mon May 4, 11:00 AST"
+        }
+      }
+    },
+    {
+      "key": "B",
+      "displayName": "Villa Coquí",
+      "target": "construction_80pct",
+      "lead": {
+        "source": "referral",
+        "projectType": "residencial",
+        "location": "Caguas, Puerto Rico",
+        "budgetRange": "300k_500k",
+        "terrainStatus": "with_terrain",
+        "contactName": "Villa Coquí — Familia Pérez",
+        "email": "villa.coqui+e2e@example.com",
+        "phone": "+1-787-555-0202",
+        "notes": "4-container family home, owns land, target ~80% mid-Construction (e2e fixture). Reserved weekly seminar seat.",
+        "booking": {
+          "type": "weekly_seminar",
+          "slot": "2026-05-07T22:00:00.000Z",
+          "label": "Weekly KONTi seminar — Thu May 7, 6:00 PM AST"
+        }
+      }
+    },
+    {
+      "key": "C",
+      "displayName": "Refugio del Yunque",
+      "target": "predesign_30pct",
+      "lead": {
+        "source": "social",
+        "projectType": "residencial",
+        "location": "Río Grande, Puerto Rico",
+        "budgetRange": "under_150k",
+        "terrainStatus": "no_terrain",
+        "contactName": "Refugio del Yunque — Familia Vega",
+        "email": "refugio.yunque+e2e@example.com",
+        "phone": "+1-787-555-0303",
+        "notes": "1-container retreat cabin, looking for land, target ~30% end of Pre-Design (e2e fixture). No booking — pure inbound."
+      }
+    }
+  ]
+}

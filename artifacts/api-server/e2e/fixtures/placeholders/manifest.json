@@ -1,0 +1,16 @@
+{
+  "_meta": "Inventory of placeholder uploads. Each entry documents the mimeType, step that consumes the file, and the assertion it powers. A sibling .meta.json is also written alongside each placeholder binary.",
+  "files": [
+    {"path": "site-plan.pdf",          "mimeType": "application/pdf",  "consumed_by": "Pre-Design",   "powers_assertion": "doc_completeness.site_plan_present"},
+    {"path": "survey.pdf",             "mimeType": "application/pdf",  "consumed_by": "Pre-Design",   "powers_assertion": "doc_completeness.survey_present"},
+    {"path": "deed.pdf",               "mimeType": "application/pdf",  "consumed_by": "Lead Intake",  "powers_assertion": "doc_completeness.deed_present"},
+    {"path": "inspiration-1.jpg",      "mimeType": "image/jpeg",       "consumed_by": "Pre-Design",   "powers_assertion": "doc_completeness.inspiration_present"},
+    {"path": "inspiration-2.jpg",      "mimeType": "image/jpeg",       "consumed_by": "Pre-Design",   "powers_assertion": "doc_completeness.inspiration_present"},
+    {"path": "receipt-lumber.pdf",     "mimeType": "application/pdf",  "consumed_by": "Construction", "powers_assertion": "doc_completeness.receipt_present"},
+    {"path": "receipt-fixtures.jpg",   "mimeType": "image/jpeg",       "consumed_by": "Construction", "powers_assertion": "doc_completeness.receipt_image_present"},
+    {"path": "contractor-estimate.pdf","mimeType": "application/pdf",  "consumed_by": "Pre-Design",   "powers_assertion": "doc_completeness.estimate_present"},
+    {"path": "ogpe-form-A.pdf",        "mimeType": "application/pdf",  "consumed_by": "Permits",      "powers_assertion": "doc_completeness.ogpe_form_present"},
+    {"path": "ogpe-form-B.pdf",        "mimeType": "application/pdf",  "consumed_by": "Permits",      "powers_assertion": "doc_completeness.ogpe_form_present"},
+    {"path": "client-signature.png",   "mimeType": "image/png",        "consumed_by": "Permits",      "powers_assertion": "doc_completeness.signature_image_present"}
+  ]
+}

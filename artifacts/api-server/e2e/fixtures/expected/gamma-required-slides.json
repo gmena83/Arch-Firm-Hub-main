@@ -1,0 +1,6 @@
+{
+  "_meta": "Required Gamma deliverable contract. The current /projects/:id/gamma-report endpoint returns a payload with `pages` (a count) and a generated URL. Until per-slide titles are surfaced, the gate verifies pages >= required-slide count and a usable URL — this keeps the assertion meaningful when a real Gamma payload is wired in.",
+  "required_slide_titles": ["Overview", "Site", "Budget", "Timeline", "Next Steps"],
+  "min_pages": 5,
+  "url_must_match": "^https?://"
+}

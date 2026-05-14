@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "KONTi Dashboard"
+version = "1.0.0"
+id = "artifacts/konti-dashboard"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24913
+
+[services.development]
+run = "pnpm --filter @workspace/konti-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/konti-dashboard", "run", "build" ]
+publicDir = "artifacts/konti-dashboard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24913"
+BASE_PATH = "/"
