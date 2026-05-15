@@ -261,7 +261,11 @@ export function ensureEstimatingHydrated(): Promise<void> {
       //   - dev / test:  log loudly and continue, so a malformed local
       //     JSON file doesn't block iteration when the operator can
       //     just delete or repair the file and restart.
-      logger.error({ err }, "estimating: legacy JSON migration failed");
+      // Include err.message + code in the message string so Railway's
+      // log viewer surfaces them even when it crops structured objects.
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const errCode = (err as { code?: string })?.code ?? "no_code";
+      logger.error({ err }, `estimating: legacy JSON migration failed — ${errCode}: ${errMsg}`);
       if (process.env.NODE_ENV === "production") {
         throw err;
       }
@@ -270,7 +274,9 @@ export function ensureEstimatingHydrated(): Promise<void> {
     applyEstimatingSnapshot(snap);
   })();
   _hydrationPromise.catch((err) => {
-    logger.error({ err }, "estimating: initial hydration failed");
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errCode = (err as { code?: string })?.code ?? "no_code";
+    logger.error({ err }, `estimating: initial hydration failed — ${errCode}: ${errMsg}`);
   });
   return _hydrationPromise;
 }

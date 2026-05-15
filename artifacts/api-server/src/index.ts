@@ -49,7 +49,13 @@ async function bootstrap(): Promise<void> {
     // hydration so it operates on the already-loaded CONTRACTORS array.
     await migrateCanonicalContractorsIfNeeded();
   } catch (err) {
-    logger.error({ err }, "Estimating/calculator/lifecycle hydration failed at boot");
+    // Surface err.message + code in the plain-text message so Railway's
+    // log viewer shows the actual cause even when it crops structured
+    // objects. The structured `{ err }` is still emitted for tools that
+    // can read JSON.
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errCode = (err as { code?: string })?.code ?? "no_code";
+    logger.error({ err }, `Estimating/calculator/lifecycle hydration failed at boot — ${errCode}: ${errMsg}`);
     if (process.env["NODE_ENV"] === "production") {
       logger.error("Refusing to serve traffic in production with stale state — exiting for restart.");
       process.exit(1);
