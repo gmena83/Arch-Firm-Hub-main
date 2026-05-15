@@ -1,0 +1,39 @@
+# Nixpacks build override for Railway.
+#
+# Why this file exists:
+# Nixpacks auto-detected `pnpm-9_x` from the lockfile shape and ran
+# `pnpm i --frozen-lockfile` with pnpm 9 — but our lockfile was generated
+# by pnpm 11.1.1 and uses the v11 overrides hash, which pnpm 9 can't
+# reconcile (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
+#
+# Nixpacks reads `packageManager` from package.json too, but that field
+# was added AFTER Railway's first build attempt. This file forces the
+# install phase to use Node 24 + pnpm 11.1.1 from the start so it never
+# falls back to the auto-detected pnpm 9 path.
+#
+# The actual build command stays in `railway.json` for clarity.
+
+providers = ['node']
+
+[phases.setup]
+nixPkgs = ['nodejs_24', 'openssl']
+aptPkgs = ['curl']
+
+[phases.install]
+dependsOn = ['setup']
+cmds = [
+  'npm install -g pnpm@11.1.1',
+  'pnpm install --frozen-lockfile',
+]
+
+[phases.build]
+dependsOn = ['install']
+# Libraries (lib/api-spec, lib/db, lib/report-categories, lib/api-zod) are
+# consumed as source TypeScript by esbuild — they have no separate build
+# step. The api-server's build.mjs handles all bundling.
+cmds = [
+  'pnpm --filter @workspace/api-server run build',
+]
+
+[start]
+cmd = 'node --enable-source-maps artifacts/api-server/dist/index.mjs'

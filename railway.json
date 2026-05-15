@@ -1,9 +1,10 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
 
+  "//": "Build pipeline lives in nixpacks.toml. This file controls deploy + healthcheck.",
+
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm install -g pnpm@11.1.1 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-spec --filter @workspace/db --filter @workspace/report-categories --filter @workspace/api-zod run build && pnpm --filter @workspace/api-server run build"
+    "builder": "NIXPACKS"
   },
   "deploy": {
     "startCommand": "node --enable-source-maps artifacts/api-server/dist/index.mjs",

@@ -3,7 +3,7 @@
 
   "//": "Vercel deploys the konti-dashboard (Vite SPA). The api-server lives on Railway — see DEPLOYMENT.md.",
 
-  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @workspace/api-spec --filter @workspace/db --filter @workspace/report-categories --filter @workspace/api-client-react run build && pnpm --filter @workspace/konti-dashboard run build",
+  "buildCommand": "pnpm --filter @workspace/konti-dashboard run build",
   "outputDirectory": "artifacts/konti-dashboard/dist/public",
   "installCommand": "npm install -g pnpm@11.1.1 && pnpm install --frozen-lockfile",
   "framework": null,
