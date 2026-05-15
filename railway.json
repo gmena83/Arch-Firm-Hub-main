@@ -9,7 +9,8 @@
   },
   "deploy": {
     "healthcheckPath": "/api/health",
-    "healthcheckTimeout": 30,
+    "//healthcheckTimeout": "90s gives the bootstrap room to hydrate from Postgres (4 hydration awaits + the canonical contractor seed migration). The api-server itself answers /api/health in <5ms once listening.",
+    "healthcheckTimeout": 90,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
