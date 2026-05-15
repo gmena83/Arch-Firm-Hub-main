@@ -5,7 +5,7 @@ packages:
   - scripts
 
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
 
 autoInstallPeers: false
 
@@ -50,7 +50,8 @@ overrides:
   'path-to-regexp@8': ^8.4.0
   'picomatch@2': ^2.3.2
   'picomatch@4': ^4.0.4
-  postcss: ^8.5.9
+  postcss: ^8.5.12
+  uuid: ^14.0.0
   yaml: ^2.8.3
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
