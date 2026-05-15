@@ -1,13 +1,13 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
 
-  "//": "Build pipeline lives in nixpacks.toml. This file controls deploy + healthcheck.",
+  "//": "Build pipeline lives in the root Dockerfile (Nixpacks kept ignoring nixpacks.toml). This file controls deploy + healthcheck.",
 
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node --enable-source-maps artifacts/api-server/dist/index.mjs",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",

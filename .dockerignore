@@ -1,0 +1,62 @@
+# Keep the build context small + avoid carrying local node_modules /
+# .git into the Docker image. Anything excluded here is invisible to
+# `COPY . .` in the Dockerfile.
+
+# Dependencies (pnpm will re-install fresh inside the image)
+**/node_modules
+
+# Build outputs (will be regenerated)
+**/dist
+**/build
+**/out-tsc
+**/*.tsbuildinfo
+**/.next
+**/.vite
+
+# Git + IDE
+.git
+.gitignore
+.vscode
+.idea
+*.iml
+
+# Local env (NEVER ship secrets)
+.env
+.env.*
+!.env.example
+
+# Local persistence (only in dev — prod uses DATABASE_URL)
+.data
+**/.data
+
+# Logs + temp
+*.log
+tmp
+.cache
+.local
+.expo
+.expo-shared
+
+# Replit artifacts (we're not on Replit anymore)
+.replit
+.replit*
+.config
+.upm
+
+# Heavy / one-time-use artifacts that don't affect the api-server runtime
+attached_assets
+docs
+screenshots
+reports
+.canvas
+.agents
+
+# Test artifacts
+playwright-report
+test-results
+test-artifacts
+coverage
+
+# Docs + plan files (api-server doesn't read them at runtime; the
+# bundled esbuild output is self-contained).
+*.md
